@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;//Пакет JSON
 using Newtonsoft.Json.Linq;
+using OperatorBot.Models;
 
 namespace OperatorBot
 {
@@ -23,6 +24,29 @@ namespace OperatorBot
             this.msidn = msidn;
             this.password = password;
             this.employer = employer;
+        }
+        public Employer GetEmployes(string IdEmployer)
+        {
+            string C_FIO;
+            HttpWebResponse response;
+            WebRequest request =WebRequest.Create($"https://art.taxi.mos.ru/api/employees/" + IdEmployer);
+            try
+            {
+                request.Method = "GET";
+                request.Headers.Add("Authorization", $"{BToken}");
+                request.PreAuthenticate =true;
+                response = (HttpWebResponse)request.GetResponse();
+                var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
+                C_FIO = JObject.Parse(responseString).SelectToken("user").SelectToken("lastName").ToString() + " " + JObject.Parse(responseString).SelectToken("user").SelectToken("firstName").ToString() + " " + JObject.Parse(responseString).SelectToken("user").SelectToken("patronymic").ToString();
+                var a = response.StatusCode;
+            }
+            catch (Exception e)
+            {
+                response = (HttpWebResponse)request.GetResponse();
+                var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
+                C_FIO = "403. Ошибка. Вы не найдены в системе, или система не отвечает";
+            }
+            return new Employer(C_FIO);
         }
         public void Authenticate()
         {
@@ -51,10 +75,10 @@ namespace OperatorBot
             var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
 
             if (!string.IsNullOrEmpty(employer))
-                BToken = JObject.Parse(responseString).SelectToken("token").ToString().Replace("Bearer ","");
+                BToken = JObject.Parse(responseString).SelectToken("token").ToString();
             else
             {
-               // var a = JObject.Parse(responseString).SelectToken("token").ToString();
+                // var a = JObject.Parse(responseString).SelectToken("token").ToString();
             }
             Console.WriteLine(responseString);
             Console.ReadLine();
