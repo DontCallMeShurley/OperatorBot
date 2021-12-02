@@ -28,7 +28,7 @@ namespace OperatorBot
         {
             iterator = new Dictionary<long, string>();
             client = new TelegramBotClient(token);
-            responser = new Responser("9519997810", "31spFKX5", "37065");
+            responser = new Responser("9083045670", "980Q2Qgu", "230225");
             responser.Authenticate();
             client.StartReceiving();
             client.OnMessage += OnMessageHandler;

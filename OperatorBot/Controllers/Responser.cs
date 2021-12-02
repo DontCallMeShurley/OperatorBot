@@ -41,9 +41,7 @@ namespace OperatorBot
                 var a = response.StatusCode;
             }
             catch (Exception e)
-            {
-                response = (HttpWebResponse)request.GetResponse();
-                var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
+            { 
                 C_FIO = "403. Ошибка. Вы не найдены в системе, или система не отвечает";
             }
             return new Employer(C_FIO);
