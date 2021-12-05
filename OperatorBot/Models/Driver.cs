@@ -10,6 +10,9 @@ namespace OperatorBot.Models
         public string Code { get; set; }
         public string Probeg { get; set; }
         public string UserName { get; set; }
-        public Licenser licenser { get; set;}
+        public string C_FIO { get; set; }
+        public Licenser licenser { get; set; }
+
+
     }
 }

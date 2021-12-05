@@ -25,8 +25,13 @@ namespace OperatorBot
             this.password = password;
             this.employer = employer;
         }
-        public Employer GetEmployes(string IdEmployer)
+        public Responser()
         {
+            
+        }
+        public string GetFIOorError(string IdEmployer)
+        {
+            this.Authenticate();
             string C_FIO;
             HttpWebResponse response;
             WebRequest request =WebRequest.Create($"https://art.taxi.mos.ru/api/employees/" + IdEmployer);
@@ -42,9 +47,9 @@ namespace OperatorBot
             }
             catch (Exception e)
             { 
-                C_FIO = "403. Ошибка. Вы не найдены в системе, или система не отвечает";
+                C_FIO = "403. Ошибка. Вы не найдены в системе, или система не отвечает, или данный водитель не принадлежит выбранному перевозчику. Повторите попытку, введя корректные данные";
             }
-            return new Employer(C_FIO);
+            return C_FIO;
         }
         public void Authenticate()
         {
@@ -76,7 +81,8 @@ namespace OperatorBot
                 BToken = JObject.Parse(responseString).SelectToken("token").ToString();
             else
             {
-                // var a = JObject.Parse(responseString).SelectToken("token").ToString();
+                 employer = JObject.Parse(responseString).SelectToken("employeeId").ToString();
+                this.Authenticate();
             }
             Console.WriteLine(responseString);
             Console.ReadLine();
