@@ -12,7 +12,5 @@ namespace OperatorBot.Models
         public string UserName { get; set; }
         public string C_FIO { get; set; }
         public Licenser licenser { get; set; }
-
-
     }
 }

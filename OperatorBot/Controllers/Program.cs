@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Entity;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using Newtonsoft.Json;//Пакет JSON
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq; //Пакет JSON
 using OperatorBot;
 using OperatorBot.Models;
 using Telegram.Bot;
@@ -16,6 +18,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 namespace OperatorBot
 {
 
+
     class Program
     {
         private static string token { get; set; } = "2137487671:AAGI3yeW8Tx_QgaQ7oExAJVjBgvypRDv2rQ";
@@ -24,8 +27,14 @@ namespace OperatorBot
         private static Context _db = new Context();
         public static Dictionary<long, string> iterator;
         public static Responser responser;
+        public static Responser MedicResponser;
+        public static Responser MechanicResponser;
         static void Main(string[] args)
         {
+            MedicResponser = new Responser("9663648005", "Ua44NkV0", null);
+            MedicResponser.Authenticate();
+            MechanicResponser = new Responser("9519997810", "31spFKX5", null);
+            MechanicResponser.Authenticate();
             iterator = new Dictionary<long, string>();
             client = new TelegramBotClient(token);
             responser = new Responser();
@@ -38,53 +47,62 @@ namespace OperatorBot
         static void OnMessageHandler(object sender, MessageEventArgs e)
         {
             var msg = e.Message;
+            Console.WriteLine($"{DateTime.Now} - Пришло сообщение с текстом: {msg.Text}. Имя пользователя - {msg.Chat.Username}. ID чата с пользователем - {msg.Chat.Id}", Color.Green);
             var driver = _db.Driver.FirstOrDefault(x => x.UserName == msg.Chat.Username);
             if (msg.Text != null)
             {
                 if (msg.Text == "/start")
                 {
-                    Console.WriteLine($"Пришло сообщение с текстом: {msg.Text}");
                     iterator.Remove(msg.Chat.Id);
                     client.SendTextMessageAsync(msg.Chat.Id, $"Добро пожаловать в Бота - Оператора, {msg.Chat.FirstName + " " + msg.Chat.LastName}. Я помогу получить Вам путевой лист на поездку. Для начала, выберите действие снизу", replyMarkup: GetButtons());
                 }
                 //Ответы кастомные
-                if (iterator.TryGetValue(msg.Chat.Id, out var state))
+                if (msg.Text != "Получить путевой лист")
                 {
-                    var Iteration = iterator.FirstOrDefault(x => x.Key == msg.Chat.Id);
-                    if (Iteration.Value == "Ввод ИД водителя")
+                    if (iterator.TryGetValue(msg.Chat.Id, out var state))
                     {
-                        responser.msidn = driver.licenser.msidn;
-                        responser.password = driver.licenser.password;
-                        var C_FIO = responser.GetFIOorError(msg.Text);
-                        if (!C_FIO.StartsWith("403"))
+                        var Iteration = iterator.FirstOrDefault(x => x.Key == msg.Chat.Id);
+                        if (Iteration.Value == "Ввод ИД водителя")
                         {
-                            client.SendTextMessageAsync(msg.Chat.Id, $"Авторизация успешна. Добро пожаловать, {C_FIO}. Теперь вы можете начать процедуру получения путевого листа, нажав на соответствующую кнопку");
-                            driver.Code = msg.Text;
-                            _db.Driver.RemoveRange(_db.Driver.Where(x => x.Code == msg.Chat.Username));
-                            _db.Driver.Add(driver);
-                            _db.SaveChanges();
-                        }
-                        else
-                            client.SendTextMessageAsync(msg.Chat.Id, $"{C_FIO}");
-                    }
-                    if (Iteration.Value == "Ввод ИД перевозчика")
-                    {
+                            responser.msidn = driver.licenser.msidn;
+                            responser.password = driver.licenser.password;
+                            var C_FIO = responser.GetFIOorError(msg.Text);
+                            if (!C_FIO.StartsWith("403"))
+                            {
+                                client.SendTextMessageAsync(msg.Chat.Id,
+                                    $"Авторизация успешна. Добро пожаловать, {C_FIO}. Теперь вы можете начать процедуру получения путевого листа, нажав на соответствующую кнопку");
+                                driver.Code = msg.Text;
 
-                        var lic = _db.Licenser.FirstOrDefault(x => x.ID == msg.Text);
-                        if (lic == null)
-                        {
-                            client.SendTextMessageAsync(msg.Chat.Id, $"Некорректный ввод. Повторите попытку, введя корректное число, которое будет стоять НАПРОТИВ имени Вашего перевозчика");
+                                _db.Driver.RemoveRange(_db.Driver.Where(x => x.UserName == msg.Chat.Username));
+                                _db.SaveChanges();
+                                _db.Driver.Add(driver);
+                                _db.SaveChanges();
+                            }
+                            else
+                                client.SendTextMessageAsync(msg.Chat.Id, $"{C_FIO}");
                         }
-                        else
+
+                        if (Iteration.Value == "Ввод ИД перевозчика")
                         {
-                            driver.licenser = lic;
-                            client.SendTextMessageAsync(msg.Chat.Id, $"Отлично. Вы выбрали перевозчика {lic.Name}. Введите Ваш единый идентификатор водителя в системе КИС АРТ: ");
-                            iterator.Remove(msg.Chat.Id);
-                            iterator.Add(msg.Chat.Id, "Ввод ИД водителя");
+
+                            var lic = _db.Licenser.FirstOrDefault(x => x.ID == msg.Text);
+                            if (lic == null)
+                            {
+                                client.SendTextMessageAsync(msg.Chat.Id,
+                                    $"Некорректный ввод. Повторите попытку, введя корректное число, которое будет стоять НАПРОТИВ имени Вашего перевозчика");
+                            }
+                            else
+                            {
+                                driver.licenser = lic;
+                                client.SendTextMessageAsync(msg.Chat.Id,
+                                    $"Отлично. Вы выбрали перевозчика {lic.Name}. Введите Ваш единый идентификатор водителя в системе КИС АРТ: ");
+                                iterator.Remove(msg.Chat.Id);
+                                iterator.Add(msg.Chat.Id, "Ввод ИД водителя");
+                            }
                         }
                     }
                 }
-                if (msg.Text == "Получить путевой лист")
+                else if (msg.Text == "Получить путевой лист")
                 {
                     iterator.Remove(msg.Chat.Id);
                     iterator.Add(msg.Chat.Id, "Получить путевой лист");
@@ -93,7 +111,7 @@ namespace OperatorBot
                         driver = new Driver();
                         driver.UserName = msg.Chat.Username;
                         //Удаляем и создаём заново
-                        _db.Driver.RemoveRange(_db.Driver.Where(x => x.Code == msg.Chat.Username));
+                        _db.Driver.RemoveRange(_db.Driver.Where(x => x.UserName == msg.Chat.Username));
                         _db.Driver.Add(driver);
                         _db.SaveChanges();
                         // client.SendTextMessageAsync(msg.Chat.Id, $"Бот Вас не знает. Давайте познакомимся. Введите Ваш единый идентификатор водителя в системе КИС АРТ: ");
@@ -127,4 +145,5 @@ namespace OperatorBot
             };
         }
     }
+
 }

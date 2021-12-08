@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
-using System.Linq;
+using System.Timers;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;//Пакет JSON
 using Newtonsoft.Json.Linq;
 using OperatorBot.Models;
+using Unity;
 
 namespace OperatorBot
 {
@@ -27,26 +30,26 @@ namespace OperatorBot
         }
         public Responser()
         {
-            
+
         }
         public string GetFIOorError(string IdEmployer)
         {
             this.Authenticate();
             string C_FIO;
             HttpWebResponse response;
-            WebRequest request =WebRequest.Create($"https://art.taxi.mos.ru/api/employees/" + IdEmployer);
+            WebRequest request = WebRequest.Create($"https://art.taxi.mos.ru/api/employees/" + IdEmployer);
             try
             {
                 request.Method = "GET";
                 request.Headers.Add("Authorization", $"{BToken}");
-                request.PreAuthenticate =true;
+                request.PreAuthenticate = true;
                 response = (HttpWebResponse)request.GetResponse();
                 var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
                 C_FIO = JObject.Parse(responseString).SelectToken("user").SelectToken("lastName").ToString() + " " + JObject.Parse(responseString).SelectToken("user").SelectToken("firstName").ToString() + " " + JObject.Parse(responseString).SelectToken("user").SelectToken("patronymic").ToString();
                 var a = response.StatusCode;
             }
             catch (Exception e)
-            { 
+            {
                 C_FIO = "403. Ошибка. Вы не найдены в системе, или система не отвечает, или данный водитель не принадлежит выбранному перевозчику. Повторите попытку, введя корректные данные";
             }
             return C_FIO;
@@ -81,11 +84,11 @@ namespace OperatorBot
                 BToken = JObject.Parse(responseString).SelectToken("token").ToString();
             else
             {
-                 employer = JObject.Parse(responseString).SelectToken("employeeId").ToString();
+                employer = JArray.Parse(responseString)[0].SelectToken("employeeId").ToString();
                 this.Authenticate();
+
             }
-            Console.WriteLine(responseString);
-            Console.ReadLine();
+
         }
     }
 }
