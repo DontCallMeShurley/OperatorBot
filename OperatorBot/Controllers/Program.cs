@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq; //Пакет JSON
@@ -31,10 +32,10 @@ namespace OperatorBot
         public static Responser MechanicResponser;
         static void Main(string[] args)
         {
-            MedicResponser = new Responser("9663648005", "Ua44NkV0", null);
-            MedicResponser.Authenticate();
-            MechanicResponser = new Responser("9519997810", "31spFKX5", null);
-            MechanicResponser.Authenticate();
+            //MedicResponser = new Responser("9663648005", "Ua44NkV0", null);
+            //MedicResponser.Authenticate();
+            //MechanicResponser = new Responser("9519997810", "31spFKX5", null);
+            //MechanicResponser.Authenticate();
             iterator = new Dictionary<long, string>();
             client = new TelegramBotClient(token);
             responser = new Responser();
@@ -54,9 +55,11 @@ namespace OperatorBot
                 if (msg.Text == "/start")
                 {
                     iterator.Remove(msg.Chat.Id);
-                    client.SendTextMessageAsync(msg.Chat.Id, $"Добро пожаловать в Бота - Оператора, {msg.Chat.FirstName + " " + msg.Chat.LastName}. Я помогу получить Вам путевой лист на поездку. Для начала, выберите действие снизу", replyMarkup: GetButtons());
+                    client.SendTextMessageAsync(msg.Chat.Id, $"Добро пожаловать в Бота - Оператора, {msg.Chat.FirstName + " " + msg.Chat.LastName}. " +
+                                                             $"Я помогу получить Вам путевой лист на поездку. Для начала, выберите действие снизу", replyMarkup: GetButtons());
+
                 }
-                //Ответы кастомные
+                //Ответы кастомные при нажатии на получение путевого листа начинаются итерации. Все шаги проходят последовательно
                 if (msg.Text != "Получить путевой лист")
                 {
                     if (iterator.TryGetValue(msg.Chat.Id, out var state))
@@ -73,10 +76,7 @@ namespace OperatorBot
                                     $"Авторизация успешна. Добро пожаловать, {C_FIO}. Теперь вы можете начать процедуру получения путевого листа, нажав на соответствующую кнопку");
                                 driver.Code = msg.Text;
 
-                                _db.Driver.RemoveRange(_db.Driver.Where(x => x.UserName == msg.Chat.Username));
-                                _db.SaveChanges();
-                                _db.Driver.Add(driver);
-                                _db.SaveChanges();
+                                RemoveAndAdd(driver);
                             }
                             else
                                 client.SendTextMessageAsync(msg.Chat.Id, $"{C_FIO}");
@@ -94,6 +94,7 @@ namespace OperatorBot
                             else
                             {
                                 driver.licenser = lic;
+                                RemoveAndAdd(driver);
                                 client.SendTextMessageAsync(msg.Chat.Id,
                                     $"Отлично. Вы выбрали перевозчика {lic.Name}. Введите Ваш единый идентификатор водителя в системе КИС АРТ: ");
                                 iterator.Remove(msg.Chat.Id);
@@ -111,12 +112,10 @@ namespace OperatorBot
                         driver = new Driver();
                         driver.UserName = msg.Chat.Username;
                         //Удаляем и создаём заново
-                        _db.Driver.RemoveRange(_db.Driver.Where(x => x.UserName == msg.Chat.Username));
-                        _db.Driver.Add(driver);
-                        _db.SaveChanges();
+                        RemoveAndAdd(driver);
                         // client.SendTextMessageAsync(msg.Chat.Id, $"Бот Вас не знает. Давайте познакомимся. Введите Ваш единый идентификатор водителя в системе КИС АРТ: ");
                         client.SendTextMessageAsync(msg.Chat.Id, $"Бот Вас не знает. Давайте познакомимся. Для начала выберите своего перевозчика из списка ниже, введя цифру, которая будет соответствовать выбранному перевозчику." +
-                            $" Внимание! Если перевозчика нет в списке, обратитесь к администратору: ");
+                            $" Внимание! Если перевозчика нет в списке, обратитесь к администратору: "  );
 
                         foreach (var lic in _db.Licenser)
                         {
@@ -139,10 +138,16 @@ namespace OperatorBot
                 Keyboard = new List<List<KeyboardButton>>
                 {
                     new List<KeyboardButton> { new KeyboardButton { Text = "Получить путевой лист" } },
-                    new List<KeyboardButton> { new KeyboardButton { Text = "Выбрать или изменить перевозчика" } },
-                    new List<KeyboardButton> { new KeyboardButton { Text = "Как меня зовут?" } }
+                    new List<KeyboardButton> { new KeyboardButton { Text = "Выбрать или изменить перевозчика" } }
                 }
             };
+        }
+        //Необходимо постоянно иметь какую то версию драйвера в базе данных. На каждое сообщение при регистрации создаётся модель в базе данных и удаляется старая.
+        private static void RemoveAndAdd(Driver driver)
+        {
+            _db.Driver.RemoveRange(_db.Driver.Where(x => x.UserName == driver.UserName));
+            _db.Driver.Add(driver);
+            _db.SaveChanges();
         }
     }
 

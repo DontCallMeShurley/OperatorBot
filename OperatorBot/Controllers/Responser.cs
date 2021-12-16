@@ -11,6 +11,7 @@ using Newtonsoft.Json;//Пакет JSON
 using Newtonsoft.Json.Linq;
 using OperatorBot.Models;
 using Unity;
+using Timer = System.Threading.Timer;
 
 namespace OperatorBot
 {
@@ -54,7 +55,7 @@ namespace OperatorBot
             }
             return C_FIO;
         }
-        public void Authenticate()
+        public async void Authenticate()
         {
             //Вернёт employers если он не указан, или Bearer token
             WebRequest request = WebRequest.Create("https://art.taxi.mos.ru/api/authenticate");
@@ -81,11 +82,18 @@ namespace OperatorBot
             var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
 
             if (!string.IsNullOrEmpty(employer))
+            {
                 BToken = JObject.Parse(responseString).SelectToken("token").ToString();
+                Console.WriteLine($"Получен BToken: {0} ", BToken);
+            }
             else
             {
                 employer = JArray.Parse(responseString)[0].SelectToken("employeeId").ToString();
-                this.Authenticate();
+                Console.WriteLine($"Получен employeeId: {0} ", employer);
+                //Выполнить через 2 секунды
+                Task.Delay(2000);
+                Authenticate();
+
 
             }
 
