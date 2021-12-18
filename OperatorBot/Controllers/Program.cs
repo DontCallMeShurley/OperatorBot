@@ -32,17 +32,17 @@ namespace OperatorBot
         public static Responser MechanicResponser;
         static void Main(string[] args)
         {
-            //MedicResponser = new Responser("9663648005", "Ua44NkV0", null);
-            //MedicResponser.Authenticate();
-            //MechanicResponser = new Responser("9519997810", "31spFKX5", null);
-            //MechanicResponser.Authenticate();
+            MedicResponser = new Responser("9663648005", "Ua44NkV0", null);
+            MedicResponser.Authenticate();
+            MechanicResponser = new Responser("9519997810", "31spFKX5", null);
+            MechanicResponser.Authenticate();
             iterator = new Dictionary<long, string>();
             client = new TelegramBotClient(token);
             responser = new Responser();
-            client.StartReceiving();
-            client.OnMessage += OnMessageHandler;
-            Console.ReadLine();
-            client.StopReceiving();
+            //client.StartReceiving();
+            //client.OnMessage += OnMessageHandler;
+            //Console.ReadLine();
+            //client.StopReceiving();
         }
 
         static void OnMessageHandler(object sender, MessageEventArgs e)

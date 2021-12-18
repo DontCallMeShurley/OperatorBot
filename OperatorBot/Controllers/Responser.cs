@@ -49,7 +49,7 @@ namespace OperatorBot
                 C_FIO = JObject.Parse(responseString).SelectToken("user").SelectToken("lastName").ToString() + " " + JObject.Parse(responseString).SelectToken("user").SelectToken("firstName").ToString() + " " + JObject.Parse(responseString).SelectToken("user").SelectToken("patronymic").ToString();
                 var a = response.StatusCode;
             }
-            catch (Exception e)
+            catch
             {
                 C_FIO = "403. Ошибка. Вы не найдены в системе, или система не отвечает, или данный водитель не принадлежит выбранному перевозчику. Повторите попытку, введя корректные данные";
             }
@@ -67,9 +67,6 @@ namespace OperatorBot
             if (!string.IsNullOrEmpty(employer))
                 postData += $"&employeeId={employer}";
             var data = Encoding.ASCII.GetBytes(postData);
-
-            request.Method = "POST";
-            request.ContentType = "application/x-www-form-urlencoded";
             request.ContentLength = data.Length;
 
             using (var stream = request.GetRequestStream())
@@ -77,24 +74,29 @@ namespace OperatorBot
                 stream.Write(data, 0, data.Length);
             }
 
-
-            var response = (HttpWebResponse)request.GetResponse();
-            var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
-
-            if (!string.IsNullOrEmpty(employer))
+            try
             {
-                BToken = JObject.Parse(responseString).SelectToken("token").ToString();
-                Console.WriteLine($"Получен BToken: {0} ", BToken);
+                var response = (HttpWebResponse)request.GetResponse();
+                var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
+
+                if (!string.IsNullOrEmpty(employer))
+                {
+                    BToken = JObject.Parse(responseString).SelectToken("token").ToString();
+                    Console.WriteLine($"Получен BToken: {0} ", BToken);
+                }
+                else
+                {
+                    employer = JArray.Parse(responseString)[0].SelectToken("employeeId").ToString();
+                    Console.WriteLine($"Получен employeeId: {0} ", employer);
+                    //Выполнить через 2 секунды, чтобы ошибку не словить
+                    await Task.Delay(2000);
+                    Authenticate();
+
+                }
             }
-            else
+            catch (Exception e)
             {
-                employer = JArray.Parse(responseString)[0].SelectToken("employeeId").ToString();
-                Console.WriteLine($"Получен employeeId: {0} ", employer);
-                //Выполнить через 2 секунды
-                Task.Delay(2000);
-                Authenticate();
-
-
+                Console.WriteLine($"Ошибка в блоке получения кода работника или BTokena. Возможно, слишком часто стучимся к API КИС АРТ. Обратитесь к разработчику. Код ошибки - {e.Message}");
             }
 
         }
