@@ -75,6 +75,7 @@ namespace OperatorBot
                                 client.SendTextMessageAsync(msg.Chat.Id,
                                     $"Авторизация успешна. Добро пожаловать, {C_FIO}. Теперь вы можете начать процедуру получения путевого листа, нажав на соответствующую кнопку");
                                 driver.Code = msg.Text;
+                                driver.C_FIO = C_FIO;
 
                                 RemoveAndAdd(driver);
                             }
@@ -115,7 +116,7 @@ namespace OperatorBot
                         RemoveAndAdd(driver);
                         // client.SendTextMessageAsync(msg.Chat.Id, $"Бот Вас не знает. Давайте познакомимся. Введите Ваш единый идентификатор водителя в системе КИС АРТ: ");
                         client.SendTextMessageAsync(msg.Chat.Id, $"Бот Вас не знает. Давайте познакомимся. Для начала выберите своего перевозчика из списка ниже, введя цифру, которая будет соответствовать выбранному перевозчику." +
-                            $" Внимание! Если перевозчика нет в списке, обратитесь к администратору: "  );
+                            $" Внимание! Если перевозчика нет в списке, обратитесь к администратору: ");
 
                         foreach (var lic in _db.Licenser)
                         {
@@ -142,12 +143,15 @@ namespace OperatorBot
                 }
             };
         }
-        //Необходимо постоянно иметь какую то версию драйвера в базе данных. На каждое сообщение при регистрации создаётся модель в базе данных и удаляется старая.
+        //Необходимо постоянно иметь какую то версию драйвера в базе данных. На каждое сообщение при регистрации создаётся модель в базе данных и удаляется старая. Для увеличения возможных итераций использую GUID
         private static void RemoveAndAdd(Driver driver)
         {
-            _db.Driver.RemoveRange(_db.Driver.Where(x => x.UserName == driver.UserName));
+         //   var a = _db.Driver.Where(x => x.UserName == driver.UserName).ToList();
+            _db.Driver.RemoveRange(_db.Driver.Where(x => x.UserName == driver.UserName).ToList());
+            _db.SaveChanges();
             _db.Driver.Add(driver);
             _db.SaveChanges();
+
         }
     }
 
