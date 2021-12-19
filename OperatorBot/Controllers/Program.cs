@@ -142,6 +142,7 @@ namespace OperatorBot
                     }
                     else
                     {
+                        //По сути здесь начинается процесс получения путевого листа. Нужно выбрать ИД машины и запустить итерационный процесс
                         if (driver.licenser_id != null)
                             driver.licenser = _db.Licenser.Where(x => x.ID == driver.licenser_id).FirstOrDefault();
                         client.SendTextMessageAsync(msg.Chat.Id, $"Здравствуйте, {driver.C_FIO}. Выберите вашу машину из списка ниже, введя число, которое стоит рядом с машиной");
