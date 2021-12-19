@@ -33,9 +33,9 @@ namespace OperatorBot
         {
 
         }
-        public  string GetFIOorError(string IdEmployer)
+        public async Task<string> GetFIOorErrorAsync(string IdEmployer)
         {
-            Authenticate();
+            await Authenticate();
             string C_FIO;
             HttpWebResponse response;
             WebRequest request = WebRequest.Create($"https://art.taxi.mos.ru/api/employees/" + IdEmployer);
@@ -74,7 +74,11 @@ namespace OperatorBot
             {
                 stream.Write(data, 0, data.Length);
             }
-
+            if (BToken != null && employer != null)
+            {
+                Console.WriteLine("Аутенфикация уже проведена");
+                return;
+            }
             try
             {
                 var response = (HttpWebResponse)request.GetResponse();
@@ -83,23 +87,50 @@ namespace OperatorBot
                 if (!string.IsNullOrEmpty(employer))
                 {
                     BToken = JObject.Parse(responseString).SelectToken("token").ToString();
-                    Console.WriteLine($"Получен BToken: {0} ", BToken);
+                    Console.WriteLine($"{DateTime.Now} - Получен BToken: {0} ", BToken);
                 }
                 else
                 {
                     employer = JArray.Parse(responseString)[0].SelectToken("employeeId").ToString();
-                    Console.WriteLine($"Получен employeeId: {0} ", employer);
+                    Console.WriteLine($"{DateTime.Now} - Получен employeeId: {0} ", employer);
                     //Выполнить через 2 секунды, чтобы ошибку не словить
                     await Task.Delay(2000);
-                    Authenticate();
+                    await Authenticate();
 
                 }
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Ошибка в блоке получения кода работника или BTokena. Возможно, слишком часто стучимся к API КИС АРТ. Обратитесь к разработчику. Код ошибки - {e.Message}");
+                Console.WriteLine($"Ошибка в блоке получения кода работника или BTokenb. Возможно, слишком часто стучимся к API КИС АРТ. Обратитесь к разработчику. Код ошибки - {e.Message}");
             }
 
+        }
+    public async Task<List<Cars>> GetCarsAsync()
+        {
+            await Authenticate();
+            HttpWebResponse response;
+            WebRequest request = WebRequest.Create($"https://art.taxi.mos.ru/api/vehicles");
+            var outputData = new List<Cars>();
+            try
+            {
+                request.Method = "GET";
+                request.Headers.Add("Authorization", $"{BToken}");
+                request.PreAuthenticate = true;
+
+                response = (HttpWebResponse)request.GetResponse();
+                var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
+                var a = JArray.Parse(JObject.Parse(responseString).SelectToken("entries").ToString());
+                foreach(var b in a)
+                {
+                    outputData.Add(new Cars(Convert.ToInt32(b.SelectToken("id").ToString()), b.SelectToken("shortName").ToString() ));
+                }
+
+            }
+            catch
+            {
+                Console.WriteLine($"{DateTime.Now} -  Непредвиденная ошибка при попытке получить список доступных машин. Обратитесь к разработчику");
+            }
+            return outputData;
         }
     }
 }

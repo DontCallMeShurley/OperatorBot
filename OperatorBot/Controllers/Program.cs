@@ -32,9 +32,10 @@ namespace OperatorBot
         public static Responser MechanicResponser;
         static void Main(string[] args)
         {
-            MedicResponser = new Responser("9663648005", "Ua44NkV0", null);
+         
+            MedicResponser = new Responser("9519997810", "31spFKX5", null);
             MedicResponser.Authenticate();
-            MechanicResponser = new Responser("9519997810", "31spFKX5", null);
+            MechanicResponser = new Responser("9663648005", "Ua44NkV0", null);
             MechanicResponser.Authenticate();
             iterator = new Dictionary<long, string>();
             client = new TelegramBotClient(token);
@@ -69,7 +70,7 @@ namespace OperatorBot
                         {
                             responser.msidn = driver.licenser.msidn;
                             responser.password = driver.licenser.password;
-                            var C_FIO = responser.GetFIOorError(msg.Text);
+                            var C_FIO = responser.GetFIOorErrorAsync(msg.Text).Result;
                             if (!C_FIO.StartsWith("403"))
                             {
                                 client.SendTextMessageAsync(msg.Chat.Id,
@@ -85,8 +86,11 @@ namespace OperatorBot
 
                         if (Iteration.Value == "Ввод ИД перевозчика")
                         {
-
                             var lic = _db.Licenser.FirstOrDefault(x => x.ID == msg.Text);
+
+                            //Обнулять каждый раз, когда вводим ИД перевозчика
+                            responser.employer = responser.BToken = null;
+
                             if (lic == null)
                             {
                                 client.SendTextMessageAsync(msg.Chat.Id,
@@ -140,7 +144,20 @@ namespace OperatorBot
                     {
                         if (driver.licenser_id != null)
                             driver.licenser = _db.Licenser.Where(x => x.ID == driver.licenser_id).FirstOrDefault();
-                        client.SendTextMessageAsync(msg.Chat.Id, $"Здравствуйте, {driver.C_FIO} Тут будет получение путевого листа");
+                        client.SendTextMessageAsync(msg.Chat.Id, $"Здравствуйте, {driver.C_FIO}. Выберите вашу машину из списка ниже, введя число, которое стоит рядом с машиной");
+
+                        iterator.Remove(msg.Chat.Id);
+                        iterator.Add(msg.Chat.Id, "Ввод ИД машины");
+
+                        responser.msidn = driver.licenser.msidn;
+                        responser.password = driver.licenser.password;
+
+                        var Cars = responser.GetCarsAsync();
+                        foreach (Cars car in Cars.Result)
+                        {
+                            client.SendTextMessageAsync(msg.Chat.Id, $"[{car.ID}] -  {car.ShortName}");
+                        }
+
                     }
                 }
                 else if (msg.Text == "Выбрать или изменить перевозчика")
