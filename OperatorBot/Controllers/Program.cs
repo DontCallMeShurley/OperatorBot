@@ -39,10 +39,10 @@ namespace OperatorBot
             iterator = new Dictionary<long, string>();
             client = new TelegramBotClient(token);
             responser = new Responser();
-            //client.StartReceiving();
-            //client.OnMessage += OnMessageHandler;
-            //Console.ReadLine();
-            //client.StopReceiving();
+            client.StartReceiving();
+            client.OnMessage += OnMessageHandler;
+            Console.ReadLine();
+            client.StopReceiving();
         }
 
         static void OnMessageHandler(object sender, MessageEventArgs e)
@@ -59,8 +59,8 @@ namespace OperatorBot
                                                              $"Я помогу получить Вам путевой лист на поездку. Для начала, выберите действие снизу", replyMarkup: GetButtons());
 
                 }
-                //Ответы кастомные при нажатии на получение путевого листа начинаются итерации. Все шаги проходят последовательно
-                if (msg.Text != "Получить путевой лист")
+                //Ответы кастомные для регистрации первоначальной при нажатии на получение путевого листа начинаются итерации. Все шаги проходят последовательно
+                if (msg.Text != "Получить путевой лист" && msg.Text != "Выбрать или изменить перевозчика")
                 {
                     if (iterator.TryGetValue(msg.Chat.Id, out var state))
                     {
@@ -75,7 +75,7 @@ namespace OperatorBot
                                 client.SendTextMessageAsync(msg.Chat.Id,
                                     $"Авторизация успешна. Добро пожаловать, {C_FIO}. Теперь вы можете начать процедуру получения путевого листа, нажав на соответствующую кнопку");
                                 driver.Code = msg.Text;
-                                driver.C_FIO = C_FIO;
+                                driver.C_FIO = C_FIO.ToString();
 
                                 RemoveAndAdd(driver);
                             }
@@ -96,19 +96,30 @@ namespace OperatorBot
                             {
                                 driver.licenser = lic;
                                 RemoveAndAdd(driver);
-                                client.SendTextMessageAsync(msg.Chat.Id,
-                                    $"Отлично. Вы выбрали перевозчика {lic.Name}. Введите Ваш единый идентификатор водителя в системе КИС АРТ: ");
-                                iterator.Remove(msg.Chat.Id);
-                                iterator.Add(msg.Chat.Id, "Ввод ИД водителя");
+                                if (driver.Code == null)
+                                {
+                                    client.SendTextMessageAsync(msg.Chat.Id,
+                                        $"Отлично. Вы выбрали перевозчика {lic.Name}. Введите Ваш единый идентификатор водителя в системе КИС АРТ: ");
+                                    iterator.Remove(msg.Chat.Id);
+                                    iterator.Add(msg.Chat.Id, "Ввод ИД водителя");
+                                }
+                                else
+                                {
+                                    client.SendTextMessageAsync(msg.Chat.Id,
+                                    $"Перевозчик успешно изменён. В базе данных Бота для пользователя с ID {driver.Code} выбран перевозчик {driver.licenser.Name}. Если вы хотите поменять ID водителя, введите новое значение, если не хотите, введите тоже самое");
+                                    iterator.Remove(msg.Chat.Id);
+                                    iterator.Add(msg.Chat.Id, "Ввод ИД водителя");
+                                }
                             }
                         }
                     }
                 }
                 else if (msg.Text == "Получить путевой лист")
                 {
+
                     iterator.Remove(msg.Chat.Id);
                     iterator.Add(msg.Chat.Id, "Получить путевой лист");
-                    if (driver == null || driver.licenser == null || driver.Code == null)
+                    if (driver == null || driver.licenser_id == null || driver.Code == null)
                     {
                         driver = new Driver();
                         driver.UserName = msg.Chat.Username;
@@ -127,8 +138,23 @@ namespace OperatorBot
                     }
                     else
                     {
+                        if (driver.licenser_id != null)
+                            driver.licenser = _db.Licenser.Where(x => x.ID == driver.licenser_id).FirstOrDefault();
                         client.SendTextMessageAsync(msg.Chat.Id, $"Здравствуйте, {driver.C_FIO} Тут будет получение путевого листа");
                     }
+                }
+                else if (msg.Text == "Выбрать или изменить перевозчика")
+                {
+                    client.SendTextMessageAsync(msg.Chat.Id, $"Ваш текущий перевозчик {driver.licenser.Name}.Выберите своего нового перевозчика из списка ниже, введя цифру, которая будет соответствовать выбранному перевозчику." +
+                           $" Внимание! Если перевозчика нет в списке, обратитесь к администратору: ");
+
+                    foreach (var lic in _db.Licenser)
+                    {
+                        client.SendTextMessageAsync(msg.Chat.Id, lic.ID + " " + lic.Name);
+                    }
+                    iterator.Remove(msg.Chat.Id);
+                    iterator.Add(msg.Chat.Id, "Ввод ИД перевозчика");
+
                 }
             }
         }
@@ -146,7 +172,7 @@ namespace OperatorBot
         //Необходимо постоянно иметь какую то версию драйвера в базе данных. На каждое сообщение при регистрации создаётся модель в базе данных и удаляется старая. Для увеличения возможных итераций использую GUID
         private static void RemoveAndAdd(Driver driver)
         {
-         //   var a = _db.Driver.Where(x => x.UserName == driver.UserName).ToList();
+            //   var a = _db.Driver.Where(x => x.UserName == driver.UserName).ToList();
             _db.Driver.RemoveRange(_db.Driver.Where(x => x.UserName == driver.UserName).ToList());
             _db.SaveChanges();
             _db.Driver.Add(driver);

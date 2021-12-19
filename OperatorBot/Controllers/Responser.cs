@@ -33,9 +33,9 @@ namespace OperatorBot
         {
 
         }
-        public string GetFIOorError(string IdEmployer)
+        public  string GetFIOorError(string IdEmployer)
         {
-            this.Authenticate();
+            Authenticate();
             string C_FIO;
             HttpWebResponse response;
             WebRequest request = WebRequest.Create($"https://art.taxi.mos.ru/api/employees/" + IdEmployer);
@@ -44,6 +44,7 @@ namespace OperatorBot
                 request.Method = "GET";
                 request.Headers.Add("Authorization", $"{BToken}");
                 request.PreAuthenticate = true;
+
                 response = (HttpWebResponse)request.GetResponse();
                 var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
                 C_FIO = JObject.Parse(responseString).SelectToken("user").SelectToken("lastName").ToString() + " " + JObject.Parse(responseString).SelectToken("user").SelectToken("firstName").ToString() + " " + JObject.Parse(responseString).SelectToken("user").SelectToken("patronymic").ToString();
@@ -55,7 +56,7 @@ namespace OperatorBot
             }
             return C_FIO;
         }
-        public async void Authenticate()
+        public async Task Authenticate()
         {
             //Вернёт employers если он не указан, или Bearer token
             WebRequest request = WebRequest.Create("https://art.taxi.mos.ru/api/authenticate");
