@@ -32,7 +32,7 @@ namespace OperatorBot
         public static Responser MechanicResponser;
         static void Main(string[] args)
         {
-         
+
             MedicResponser = new Responser("9519997810", "31spFKX5", null);
             MedicResponser.Authenticate();
             MechanicResponser = new Responser("9663648005", "Ua44NkV0", null);
@@ -46,7 +46,7 @@ namespace OperatorBot
             client.StopReceiving();
         }
 
-        static void OnMessageHandler(object sender, MessageEventArgs e)
+        static async void OnMessageHandler(object sender, MessageEventArgs e)
         {
             var msg = e.Message;
             Console.WriteLine($"{DateTime.Now} - Пришло сообщение с текстом: {msg.Text}. Имя пользователя - {msg.Chat.Username}. ID чата с пользователем - {msg.Chat.Id}", Color.Green);
@@ -56,7 +56,7 @@ namespace OperatorBot
                 if (msg.Text == "/start")
                 {
                     iterator.Remove(msg.Chat.Id);
-                    client.SendTextMessageAsync(msg.Chat.Id, $"Добро пожаловать в Бота - Оператора, {msg.Chat.FirstName + " " + msg.Chat.LastName}. " +
+                    await client.SendTextMessageAsync(msg.Chat.Id, $"Добро пожаловать в Бота - Оператора, {msg.Chat.FirstName + " " + msg.Chat.LastName}. " +
                                                              $"Я помогу получить Вам путевой лист на поездку. Для начала, выберите действие снизу", replyMarkup: GetButtons());
 
                 }
@@ -73,7 +73,7 @@ namespace OperatorBot
                             var C_FIO = responser.GetFIOorErrorAsync(msg.Text).Result;
                             if (!C_FIO.StartsWith("403"))
                             {
-                                client.SendTextMessageAsync(msg.Chat.Id,
+                                await client.SendTextMessageAsync(msg.Chat.Id,
                                     $"Авторизация успешна. Добро пожаловать, {C_FIO}. Теперь вы можете начать процедуру получения путевого листа, нажав на соответствующую кнопку");
                                 driver.Code = msg.Text;
                                 driver.C_FIO = C_FIO.ToString();
@@ -81,7 +81,7 @@ namespace OperatorBot
                                 RemoveAndAdd(driver);
                             }
                             else
-                                client.SendTextMessageAsync(msg.Chat.Id, $"{C_FIO}");
+                                await client.SendTextMessageAsync(msg.Chat.Id, $"{C_FIO}");
                         }
 
                         if (Iteration.Value == "Ввод ИД перевозчика")
@@ -93,7 +93,7 @@ namespace OperatorBot
 
                             if (lic == null)
                             {
-                                client.SendTextMessageAsync(msg.Chat.Id,
+                                await client.SendTextMessageAsync(msg.Chat.Id,
                                     $"Некорректный ввод. Повторите попытку, введя корректное число, которое будет стоять НАПРОТИВ имени Вашего перевозчика");
                             }
                             else
@@ -102,19 +102,53 @@ namespace OperatorBot
                                 RemoveAndAdd(driver);
                                 if (driver.Code == null)
                                 {
-                                    client.SendTextMessageAsync(msg.Chat.Id,
+                                    await client.SendTextMessageAsync(msg.Chat.Id,
                                         $"Отлично. Вы выбрали перевозчика {lic.Name}. Введите Ваш единый идентификатор водителя в системе КИС АРТ: ");
                                     iterator.Remove(msg.Chat.Id);
                                     iterator.Add(msg.Chat.Id, "Ввод ИД водителя");
                                 }
                                 else
                                 {
-                                    client.SendTextMessageAsync(msg.Chat.Id,
+                                    await client.SendTextMessageAsync(msg.Chat.Id,
                                     $"Перевозчик успешно изменён. В базе данных Бота для пользователя с ID {driver.Code} выбран перевозчик {driver.licenser.Name}. Если вы хотите поменять ID водителя, введите новое значение, если не хотите, введите тоже самое");
                                     iterator.Remove(msg.Chat.Id);
                                     iterator.Add(msg.Chat.Id, "Ввод ИД водителя");
                                 }
                             }
+                        }
+                        if (Iteration.Value == "Ввод ИД машины")
+                        {
+                            var a = responser.CreateWaybills(driver, msg.Text);
+                            if (a.Result.Length > 7)
+                            {
+                                await client.SendTextMessageAsync(msg.Chat.Id, a.Result + " Обратитесь к разработчику");
+                            }
+                            else
+                            {
+                                driver.Waybill = a.Result;
+                                RemoveAndAdd(driver);
+
+                                await client.SendTextMessageAsync(msg.Chat.Id, "Путевой лист успешно создан. Переходим к созданию осмотров");
+                                await client.SendTextMessageAsync(msg.Chat.Id, "Создание осмотра медиком...");
+
+                                var ans = MedicResponser.CreatePreMed(driver);
+
+                                await client.SendTextMessageAsync(msg.Chat.Id, ans.Result);
+                                await client.SendTextMessageAsync(msg.Chat.Id, "Введите свой пробег: ");
+
+                                iterator.Remove(msg.Chat.Id);
+                                iterator.Add(msg.Chat.Id, "Ввод пробега");
+                            }
+                        }
+                        if (Iteration.Value == "Ввод пробега")
+                        {
+                            await client.SendTextMessageAsync(msg.Chat.Id, "Создание осмотра механиком...");
+                            var ans = MechanicResponser.CreatePreTech(driver, msg.Text);
+                            await client.SendTextMessageAsync(msg.Chat.Id, "Все осмотры созданы");
+
+                            var pdf = await responser.SaveWaybillPDF(driver);
+                        
+                               await client.SendDocumentAsync(msg.Chat.Id, pdf);
                         }
                     }
                 }
@@ -130,12 +164,12 @@ namespace OperatorBot
                         //Удаляем и создаём заново
                         RemoveAndAdd(driver);
                         // client.SendTextMessageAsync(msg.Chat.Id, $"Бот Вас не знает. Давайте познакомимся. Введите Ваш единый идентификатор водителя в системе КИС АРТ: ");
-                        client.SendTextMessageAsync(msg.Chat.Id, $"Бот Вас не знает. Давайте познакомимся. Для начала выберите своего перевозчика из списка ниже, введя цифру, которая будет соответствовать выбранному перевозчику." +
+                        await client.SendTextMessageAsync(msg.Chat.Id, $"Бот Вас не знает. Давайте познакомимся. Для начала выберите своего перевозчика из списка ниже, введя цифру, которая будет соответствовать выбранному перевозчику." +
                             $" Внимание! Если перевозчика нет в списке, обратитесь к администратору: ");
 
                         foreach (var lic in _db.Licenser)
                         {
-                            client.SendTextMessageAsync(msg.Chat.Id, lic.ID + " " + lic.Name);
+                            await client.SendTextMessageAsync(msg.Chat.Id, lic.ID + " " + lic.Name);
                         }
                         iterator.Remove(msg.Chat.Id);
                         iterator.Add(msg.Chat.Id, "Ввод ИД перевозчика");
@@ -145,10 +179,9 @@ namespace OperatorBot
                         //По сути здесь начинается процесс получения путевого листа. Нужно выбрать ИД машины и запустить итерационный процесс
                         if (driver.licenser_id != null)
                             driver.licenser = _db.Licenser.Where(x => x.ID == driver.licenser_id).FirstOrDefault();
-                        client.SendTextMessageAsync(msg.Chat.Id, $"Здравствуйте, {driver.C_FIO}. Выберите вашу машину из списка ниже, введя число, которое стоит рядом с машиной");
+                        await client.SendTextMessageAsync(msg.Chat.Id, $"Здравствуйте, {driver.C_FIO}. Выберите вашу машину из списка ниже, введя число, которое стоит рядом с машиной");
 
-                        iterator.Remove(msg.Chat.Id);
-                        iterator.Add(msg.Chat.Id, "Ввод ИД машины");
+
 
                         responser.msidn = driver.licenser.msidn;
                         responser.password = driver.licenser.password;
@@ -156,19 +189,20 @@ namespace OperatorBot
                         var Cars = responser.GetCarsAsync();
                         foreach (Cars car in Cars.Result)
                         {
-                            client.SendTextMessageAsync(msg.Chat.Id, $"[{car.ID}] -  {car.ShortName}");
+                            await client.SendTextMessageAsync(msg.Chat.Id, $"[{car.ID}] -  {car.ShortName}");
                         }
-
+                        iterator.Remove(msg.Chat.Id);
+                        iterator.Add(msg.Chat.Id, "Ввод ИД машины");
                     }
                 }
                 else if (msg.Text == "Выбрать или изменить перевозчика")
                 {
-                    client.SendTextMessageAsync(msg.Chat.Id, $"Ваш текущий перевозчик {driver.licenser.Name}.Выберите своего нового перевозчика из списка ниже, введя цифру, которая будет соответствовать выбранному перевозчику." +
+                    await client.SendTextMessageAsync(msg.Chat.Id, $"Ваш текущий перевозчик {driver.licenser.Name}.Выберите своего нового перевозчика из списка ниже, введя цифру, которая будет соответствовать выбранному перевозчику." +
                            $" Внимание! Если перевозчика нет в списке, обратитесь к администратору: ");
 
                     foreach (var lic in _db.Licenser)
                     {
-                        client.SendTextMessageAsync(msg.Chat.Id, lic.ID + " " + lic.Name);
+                        await client.SendTextMessageAsync(msg.Chat.Id, lic.ID + " " + lic.Name);
                     }
                     iterator.Remove(msg.Chat.Id);
                     iterator.Add(msg.Chat.Id, "Ввод ИД перевозчика");
