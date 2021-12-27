@@ -101,7 +101,7 @@ namespace OperatorBot
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Ошибка в блоке получения кода работника или BTokenb. Возможно, слишком часто стучимся к API КИС АРТ. Обратитесь к разработчику. Код ошибки - {e.Message}");
+                Console.WriteLine($"Ошибка в блоке получения кода работника или BTokena. Возможно, слишком часто стучимся к API КИС АРТ. Обратитесь к разработчику. Код ошибки - {e.Message}");
             }
 
         }
@@ -164,38 +164,47 @@ namespace OperatorBot
             }
             return outputData;
         }
-        public async Task<Telegram.Bot.Types.InputFiles.InputOnlineFile> SaveWaybillPDF(Driver driver)
+        public async Task<string> SaveWaybillPDF(Driver driver)
         {
             await Authenticate();
-            HttpWebResponse response;
-            WebRequest request = WebRequest.Create($"https://art.taxi.mos.ru/api/waybills/" + "840453" + "/pdf");
+            WebResponse response;
+            WebRequest request = WebRequest.Create($"https://art.taxi.mos.ru/api/waybills/" + "887957" + "/pdf");
             try
             {
-                request.Method = "POST";
+                request.Method = "GET";
                 request.Headers.Add("Authorization", $"{BToken}");
                 request.PreAuthenticate = true;
-
-
-
-                response = (HttpWebResponse)request.GetResponse();
-                using (var stream = response.GetResponseStream())
+                request.Timeout = 3000;
+                response = request.GetResponse();
+                var remoteStream = response.GetResponseStream();
+                string FileName = $"{DateTime.Now.Month}.{DateTime.Now.Day}-{driver.C_FIO}-{driver.Waybill}.pdf";
+                var localStream = File.Create(FileName); 
+                int bytesProcessed = 0;
+                byte[] buffer = new byte[1024];
+                 
+                //перевожу ответ в стрим и запихиваю его в файл
+                int bytesRead;
+                do
                 {
-                    var data = new Telegram.Bot.Types.InputFiles.InputOnlineFile(stream, $"{driver.Waybill}.pdf");
-                    return data;
-                }
-                //using (Stream output = File.OpenWrite($"{driver.Waybill}.pdf"))
-                //using (Stream input = response.GetResponseStream())
-                //{
-                //    input.CopyTo(output);
-                //}
+                    bytesRead = remoteStream.Read(buffer, 0, buffer.Length);
+                    localStream.Write(buffer, 0, bytesRead);
+                    bytesProcessed += bytesRead;
+                } while (bytesRead > 0);
+
+                localStream.Flush();
+                localStream.Close();
+                Console.WriteLine("test");
+                return FileName;
+
             }
             catch (Exception e)
             {
                 Console.WriteLine($"{DateTime.Now} - Ошибка в блоке получения файла путевого листа. Код - {e.Message}");
-                return new Telegram.Bot.Types.InputFiles.InputOnlineFile(Stream.Null);
+                return "";
             }
            
         }
+
     public async Task<string> CreatePreMed(Driver driver)
         {
             var outputData = "";

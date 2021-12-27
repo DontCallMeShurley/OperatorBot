@@ -22,7 +22,7 @@ namespace OperatorBot
 
     class Program
     {
-        private static string token { get; set; } = "2137487671:AAGI3yeW8Tx_QgaQ7oExAJVjBgvypRDv2rQ";
+        private static string token { get; set; } = "2137487671:AAGa9fv0epTfEXH-81o7IzIGpBPDQtoB3AM";
         private static TelegramBotClient client;
         private static int Iteration = 0;
         private static Context _db = new Context();
@@ -147,8 +147,10 @@ namespace OperatorBot
                             await client.SendTextMessageAsync(msg.Chat.Id, "Все осмотры созданы");
 
                             var pdf = await responser.SaveWaybillPDF(driver);
-                        
-                               await client.SendDocumentAsync(msg.Chat.Id, pdf);
+                            var stream = File.OpenRead(pdf);
+                            var output = new Telegram.Bot.Types.InputFiles.InputOnlineFile(stream);
+
+                            await client.SendDocumentAsync(msg.Chat.Id, output);
                         }
                     }
                 }
