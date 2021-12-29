@@ -1,9 +1,11 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
+#nullable disable
+
 namespace OperatorBot.Migrations
 {
-    public partial class InitialCreate : Migration
+    public partial class firstMigration : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -30,7 +32,8 @@ namespace OperatorBot.Migrations
                     Probeg = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UserName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     C_FIO = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    licenser_id = table.Column<string>(type: "nvarchar(450)", nullable: true)
+                    licenser_id = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    Waybill = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -39,8 +42,7 @@ namespace OperatorBot.Migrations
                         name: "FK_Driver_Licenser_licenser_id",
                         column: x => x.licenser_id,
                         principalTable: "Licenser",
-                        principalColumn: "ID",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "ID");
                 });
 
             migrationBuilder.CreateIndex(

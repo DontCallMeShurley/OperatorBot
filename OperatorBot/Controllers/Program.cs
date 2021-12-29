@@ -56,8 +56,12 @@ namespace OperatorBot
                 if (msg.Text == "/start")
                 {
                     iterator.Remove(msg.Chat.Id);
-                    await client.SendTextMessageAsync(msg.Chat.Id, $"Добро пожаловать в Бота - Оператора, {msg.Chat.FirstName + " " + msg.Chat.LastName}. " +
-                                                             $"Я помогу получить Вам путевой лист на поездку. Для начала, выберите действие снизу", replyMarkup: GetButtons());
+                    if (driver == null)
+                        await client.SendTextMessageAsync(msg.Chat.Id, $"Добро пожаловать в Бота - Оператора, {msg.Chat.FirstName + " " + msg.Chat.LastName}. " +
+                                                                 $"Я помогу получить Вам путевой лист на поездку. Для начала, выберите действие снизу", replyMarkup: GetButtons1());
+                    else 
+                        await client.SendTextMessageAsync(msg.Chat.Id, $"Добро пожаловать в Бота - Оператора, {msg.Chat.FirstName + " " + msg.Chat.LastName}. " +
+                                                                 $"Я помогу получить Вам путевой лист на поездку. Для начала, выберите действие снизу", replyMarkup: GetButtons());
 
                 }
                 //Ответы кастомные для регистрации первоначальной при нажатии на получение путевого листа начинаются итерации. Все шаги проходят последовательно
@@ -74,7 +78,7 @@ namespace OperatorBot
                             if (!C_FIO.StartsWith("403"))
                             {
                                 await client.SendTextMessageAsync(msg.Chat.Id,
-                                    $"Авторизация успешна. Добро пожаловать, {C_FIO}. Теперь вы можете начать процедуру получения путевого листа, нажав на соответствующую кнопку");
+                                    $"Авторизация успешна. Добро пожаловать, {C_FIO}. Теперь вы можете начать процедуру получения путевого листа, нажав на соответствующую кнопку",replyMarkup: GetButtons());
                                 driver.Code = msg.Text;
                                 driver.C_FIO = C_FIO.ToString();
 
@@ -181,7 +185,7 @@ namespace OperatorBot
                         //По сути здесь начинается процесс получения путевого листа. Нужно выбрать ИД машины и запустить итерационный процесс
                         if (driver.licenser_id != null)
                             driver.licenser = _db.Licenser.Where(x => x.ID == driver.licenser_id).FirstOrDefault();
-                        await client.SendTextMessageAsync(msg.Chat.Id, $"Здравствуйте, {driver.C_FIO}. Выберите вашу машину из списка ниже, введя число, которое стоит рядом с машиной");
+                        await client.SendTextMessageAsync(msg.Chat.Id, $"Здравствуйте, {driver.C_FIO}. Выберите вашу машину из списка ниже, введя число, которое стоит рядом с машиной", replyMarkup: GetButtons());
 
 
 
@@ -220,6 +224,16 @@ namespace OperatorBot
                 {
                     new List<KeyboardButton> { new KeyboardButton { Text = "Получить путевой лист" } },
                     new List<KeyboardButton> { new KeyboardButton { Text = "Выбрать или изменить перевозчика" } }
+                }
+            };
+        }
+        private static IReplyMarkup GetButtons1()
+        {
+            return new ReplyKeyboardMarkup
+            {
+                Keyboard = new List<List<KeyboardButton>>
+                {
+                    new List<KeyboardButton> { new KeyboardButton { Text = "Получить путевой лист" } }
                 }
             };
         }
