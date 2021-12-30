@@ -87,12 +87,12 @@ namespace OperatorBot
                 if (!string.IsNullOrEmpty(employer))
                 {
                     BToken = JObject.Parse(responseString).SelectToken("token").ToString();
-                    Console.WriteLine($"{DateTime.Now} - Получен BToken: {0} ", BToken);
+                    Console.WriteLine($"{DateTime.Now} - Получен BToken: {BToken} " );
                 }
                 else
                 {
                     employer = JArray.Parse(responseString)[0].SelectToken("employeeId").ToString();
-                    Console.WriteLine($"{DateTime.Now} - Получен employeeId: {0} ", employer);
+                    Console.WriteLine($"{DateTime.Now} - Получен employeeId: {employer} ");
                     //Выполнить через 2 секунды, чтобы ошибку не словить
                     await Task.Delay(2000);
                     await Authenticate();
@@ -101,7 +101,7 @@ namespace OperatorBot
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Ошибка в блоке получения кода работника или BTokena. Возможно, слишком часто стучимся к API КИС АРТ. Обратитесь к разработчику. Код ошибки - {e.Message}");
+                Console.WriteLine($"{DateTime.Now}- Ошибка в блоке получения кода работника или BTokena. Возможно, слишком часто стучимся к API КИС АРТ. Обратитесь к разработчику. Код ошибки - {e.Message}");
             }
 
         }
@@ -168,7 +168,7 @@ namespace OperatorBot
         {
             await Authenticate();
             WebResponse response;
-            WebRequest request = WebRequest.Create($"https://art.taxi.mos.ru/api/waybills/" + "887957" + "/pdf");
+            WebRequest request = WebRequest.Create($"https://art.taxi.mos.ru/api/waybills/" + "909208" + "/pdf");
             try
             {
                 request.Method = "GET";
@@ -240,6 +240,7 @@ namespace OperatorBot
         {
             var outputData = "";
             await Authenticate();
+            await Task.Delay(600000);
             HttpWebResponse response;
             WebRequest request = WebRequest.Create($"https://art.taxi.mos.ru/api/checkups/PRE_MED");
             try
