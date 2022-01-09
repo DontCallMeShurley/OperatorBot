@@ -74,11 +74,11 @@ namespace OperatorBot
             {
                 stream.Write(data, 0, data.Length);
             }
-            if (BToken != null && employer != null)
-            {
-                Console.WriteLine($"{DateTime.Now} - Аутенфикация уже проведена");
-                return;
-            }
+            //if (BToken != null && employer != null)
+            //{
+            //    Console.WriteLine($"{DateTime.Now} - Аутенфикация уже проведена");
+            //    return;
+            //}
             try
             {
                 var response = (HttpWebResponse)request.GetResponse();
