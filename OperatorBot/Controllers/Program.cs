@@ -59,13 +59,13 @@ namespace OperatorBot
                     if (driver == null)
                         await client.SendTextMessageAsync(msg.Chat.Id, $"Добро пожаловать в Бота - Оператора, {msg.Chat.FirstName + " " + msg.Chat.LastName}. " +
                                                                  $"Я помогу получить Вам путевой лист на поездку. Для начала, выберите действие снизу", replyMarkup: GetButtons1());
-                    else 
+                    else
                         await client.SendTextMessageAsync(msg.Chat.Id, $"Добро пожаловать в Бота - Оператора, {msg.Chat.FirstName + " " + msg.Chat.LastName}. " +
                                                                  $"Я помогу получить Вам путевой лист на поездку. Для начала, выберите действие снизу", replyMarkup: GetButtons());
 
                 }
                 //Ответы кастомные для регистрации первоначальной при нажатии на получение путевого листа начинаются итерации. Все шаги проходят последовательно
-                if (msg.Text != "Получить путевой лист" && msg.Text != "Выбрать или изменить перевозчика")
+                if (msg.Text != "Получить/Закрыть путевой лист" && msg.Text != "Выбрать или изменить перевозчика")
                 {
                     if (iterator.TryGetValue(msg.Chat.Id, out var state))
                     {
@@ -78,7 +78,7 @@ namespace OperatorBot
                             if (!C_FIO.StartsWith("403"))
                             {
                                 await client.SendTextMessageAsync(msg.Chat.Id,
-                                    $"Авторизация успешна. Добро пожаловать, {C_FIO}. Теперь вы можете начать процедуру получения путевого листа, нажав на соответствующую кнопку",replyMarkup: GetButtons());
+                                    $"Авторизация успешна. Добро пожаловать, {C_FIO}. Теперь вы можете начать процедуру получения путевого листа, нажав на соответствующую кнопку", replyMarkup: GetButtons());
                                 driver.Code = msg.Text;
                                 driver.C_FIO = C_FIO.ToString();
 
@@ -133,9 +133,9 @@ namespace OperatorBot
                                 RemoveAndAdd(driver);
 
                                 await client.SendTextMessageAsync(msg.Chat.Id, "Путевой лист успешно создан. Переходим к созданию осмотров");
-                                await client.SendTextMessageAsync(msg.Chat.Id, "Создание осмотра медиком...");
+                                await client.SendTextMessageAsync(msg.Chat.Id, "Создание пререйсового осмотра медиком...");
 
-                                var ans = MedicResponser.CreatePreMed(driver);
+                                var ans = MedicResponser.CreateMed(driver, false);
 
                                 await client.SendTextMessageAsync(msg.Chat.Id, ans.Result);
                                 await client.SendTextMessageAsync(msg.Chat.Id, "Введите свой пробег: ");
@@ -146,10 +146,10 @@ namespace OperatorBot
                         }
                         if (Iteration.Value == "Ввод пробега")
                         {
-                            await client.SendTextMessageAsync(msg.Chat.Id, "Создание осмотра механиком...");
+                            await client.SendTextMessageAsync(msg.Chat.Id, "Создание пререйсового осмотра механиком(процесс занимает 10 минут)...");
                             iterator.Remove(msg.Chat.Id);
                             iterator.Add(msg.Chat.Id, "МеханикПре");
-                            var ans = MechanicResponser.CreatePreTech(driver, msg.Text);
+                            var ans = MechanicResponser.CreateTech(driver, msg.Text,false);
                             await client.SendTextMessageAsync(msg.Chat.Id, "Все осмотры созданы");
                             await client.SendTextMessageAsync(msg.Chat.Id, "Ваш путевой лист:");
 
@@ -158,14 +158,37 @@ namespace OperatorBot
                             var output = new Telegram.Bot.Types.InputFiles.InputOnlineFile(stream, pdf);
 
                             await client.SendDocumentAsync(msg.Chat.Id, output);
+
+                            stream.Flush();
+                            stream.Close();
+
+                        }
+                        else if (Iteration.Value == "Ввод пробега(Пост)")
+                        {
+                            await client.SendTextMessageAsync(msg.Chat.Id, "Создание послерейсового осмотра механиком(процесс занимает 10 минут)...");
+                            iterator.Remove(msg.Chat.Id);
+                            iterator.Add(msg.Chat.Id, "МеханикПост");
+                            var ans = MechanicResponser.CreateTech(driver, msg.Text, true);
+                            await client.SendTextMessageAsync(msg.Chat.Id, "Все послерейсовые осмотры созданы");
+                            await client.SendTextMessageAsync(msg.Chat.Id, "Ваш путевой лист:");
+
+                            var pdf = await responser.SaveWaybillPDF(driver);
+                            var stream = File.OpenRead(pdf);
+                            var output = new Telegram.Bot.Types.InputFiles.InputOnlineFile(stream, pdf);
+
+                            await client.SendDocumentAsync(msg.Chat.Id, output);
+
+                            stream.Flush();
+                            stream.Close();
+
                         }
                     }
                 }
-                else if (msg.Text == "Получить путевой лист")
+                else if (msg.Text == "Получить/Закрыть путевой лист")
                 {
 
                     iterator.Remove(msg.Chat.Id);
-                    iterator.Add(msg.Chat.Id, "Получить путевой лист");
+                    iterator.Add(msg.Chat.Id, "Получить/Закрыть путевой лист");
                     if (driver == null || driver.licenser_id == null || driver.Code == null)
                     {
                         driver = new Driver();
@@ -185,23 +208,52 @@ namespace OperatorBot
                     }
                     else
                     {
+                        var lic = _db.Licenser.FirstOrDefault(a => a.ID == driver.licenser_id);
+                        responser.msidn = lic.msidn;
+                        responser.password = lic.password;
+                        var a = responser.GetWaybill(driver);
                         //По сути здесь начинается процесс получения путевого листа. Нужно выбрать ИД машины и запустить итерационный процесс
-                        if (driver.licenser_id != null)
-                            driver.licenser = _db.Licenser.Where(x => x.ID == driver.licenser_id).FirstOrDefault();
-                        await client.SendTextMessageAsync(msg.Chat.Id, $"Здравствуйте, {driver.C_FIO}. Выберите вашу машину из списка ниже, введя число, которое стоит рядом с машиной", replyMarkup: GetButtons());
 
-
-
-                        responser.msidn = driver.licenser.msidn;
-                        responser.password = driver.licenser.password;
-
-                        var Cars = responser.GetCarsAsync();
-                        foreach (Cars car in Cars.Result)
+                        if (a.Result == "-1")
                         {
-                            await client.SendTextMessageAsync(msg.Chat.Id, $"[{car.ID}] -  {car.ShortName}");
+                            if (driver.licenser_id != null)
+                                driver.licenser = _db.Licenser.Where(x => x.ID == driver.licenser_id).FirstOrDefault();
+                            await client.SendTextMessageAsync(msg.Chat.Id, $"Здравствуйте, {driver.C_FIO}. Выберите вашу машину из списка ниже, введя число, которое стоит рядом с машиной", replyMarkup: GetButtons());
+                            responser.msidn = driver.licenser.msidn;
+                            responser.password = driver.licenser.password;
+
+                            var Cars = responser.GetCarsAsync();
+                            foreach (Cars car in Cars.Result)
+                            {
+                                await client.SendTextMessageAsync(msg.Chat.Id, $"[{car.ID}] -  {car.ShortName}");
+                            }
+                            iterator.Remove(msg.Chat.Id);
+                            iterator.Add(msg.Chat.Id, "Ввод ИД машины");
                         }
-                        iterator.Remove(msg.Chat.Id);
-                        iterator.Add(msg.Chat.Id, "Ввод ИД машины");
+                        else
+                        {
+                            driver.Waybill = a.Result;
+                            RemoveAndAdd(driver);
+                            await client.SendTextMessageAsync(msg.Chat.Id, $"{driver.C_FIO}, на ваше имя уже есть действующий путевой лист. Выглядит он так: ");
+
+                            var pdf = await responser.SaveWaybillPDF(driver);
+                            var stream = File.OpenRead(pdf);
+                            var output = new Telegram.Bot.Types.InputFiles.InputOnlineFile(stream, pdf);
+                            await client.SendDocumentAsync(msg.Chat.Id, output);
+
+                            stream.Flush();
+                            stream.Close();
+
+                            await client.SendTextMessageAsync(msg.Chat.Id, "Создание послерейсового осмотра медиком...");
+
+                            var ans = MedicResponser.CreateMed(driver, true);
+
+                            await client.SendTextMessageAsync(msg.Chat.Id, ans.Result);
+                            await client.SendTextMessageAsync(msg.Chat.Id, "Введите свой пробег: ");
+
+                            iterator.Remove(msg.Chat.Id);
+                            iterator.Add(msg.Chat.Id, "Ввод пробега(Пост)");
+                        }
                     }
                 }
                 else if (msg.Text == "Выбрать или изменить перевозчика")
@@ -225,7 +277,7 @@ namespace OperatorBot
             {
                 Keyboard = new List<List<KeyboardButton>>
                 {
-                    new List<KeyboardButton> { new KeyboardButton { Text = "Получить путевой лист" } },
+                    new List<KeyboardButton> { new KeyboardButton { Text = "Получить/Закрыть путевой лист" } },
                     new List<KeyboardButton> { new KeyboardButton { Text = "Выбрать или изменить перевозчика" } }
                 }
             };
@@ -236,7 +288,7 @@ namespace OperatorBot
             {
                 Keyboard = new List<List<KeyboardButton>>
                 {
-                    new List<KeyboardButton> { new KeyboardButton { Text = "Получить путевой лист" } }
+                    new List<KeyboardButton> { new KeyboardButton { Text = "Получить/Закрыть путевой лист" } }
                 }
             };
         }

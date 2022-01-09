@@ -87,7 +87,7 @@ namespace OperatorBot
                 if (!string.IsNullOrEmpty(employer))
                 {
                     BToken = JObject.Parse(responseString).SelectToken("token").ToString();
-                    Console.WriteLine($"{DateTime.Now} - Получен BToken: {BToken} " );
+                    Console.WriteLine($"{DateTime.Now} - Получен BToken: {BToken} ");
                 }
                 else
                 {
@@ -105,7 +105,7 @@ namespace OperatorBot
             }
 
         }
-    public async Task<List<Cars>> GetCarsAsync()
+        public async Task<List<Cars>> GetCarsAsync()
         {
             await Authenticate();
             HttpWebResponse response;
@@ -120,9 +120,9 @@ namespace OperatorBot
                 response = (HttpWebResponse)request.GetResponse();
                 var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
                 var a = JArray.Parse(JObject.Parse(responseString).SelectToken("entries").ToString());
-                foreach(var b in a)
+                foreach (var b in a)
                 {
-                    outputData.Add(new Cars(Convert.ToInt32(b.SelectToken("id").ToString()), b.SelectToken("shortName").ToString() ));
+                    outputData.Add(new Cars(Convert.ToInt32(b.SelectToken("id").ToString()), b.SelectToken("shortName").ToString()));
                 }
 
             }
@@ -132,8 +132,8 @@ namespace OperatorBot
             }
             return outputData;
         }
-       //Вернёт ошибку или ID созданного путевого листа
-    public async Task<string> CreateWaybills(Driver driver, string cars)
+        //Вернёт ошибку или ID созданного путевого листа
+        public async Task<string> CreateWaybills(Driver driver, string cars)
         {
             await Authenticate();
             string outputData = "";
@@ -145,7 +145,7 @@ namespace OperatorBot
                 request.Headers.Add("Authorization", $"{BToken}");
                 request.PreAuthenticate = true;
                 request.ContentType = "application/json";
-                var postData = "{\"status\":\"ISSUED\",\"vehicle\":{\"id\":"+cars+"},\"driver\":{\"id\":"+driver.Code+"}}";
+                var postData = "{\"status\":\"ISSUED\",\"vehicle\":{\"id\":" + cars + "},\"driver\":{\"id\":" + driver.Code + "}}";
                 var data = Encoding.ASCII.GetBytes(postData);
                 request.ContentLength = data.Length;
 
@@ -164,11 +164,46 @@ namespace OperatorBot
             }
             return outputData;
         }
+
+        public async Task<string> GetWaybill(Driver driver)
+        {
+            await Authenticate();
+            HttpWebResponse response;
+            WebRequest request = WebRequest.Create($"https://art.taxi.mos.ru/api/waybills?search=" + driver.C_FIO.Substring(0, driver.C_FIO.IndexOf(" ")) + "&" + driver.C_FIO.Substring(driver.C_FIO.IndexOf(" ") + 1, driver.C_FIO.IndexOf(" ", driver.C_FIO.IndexOf(" ")) + 1));
+            //var outputData = new List<Cars>();
+            var outputData = "";
+            try
+            {
+                request.Method = "GET";
+                request.Headers.Add("Authorization", $"{BToken}");
+                request.PreAuthenticate = true;
+
+                response = (HttpWebResponse)request.GetResponse();
+                var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
+
+                //Если найдено 0 путевых, то возвращаем -1
+                if (JObject.Parse(responseString).SelectToken("total").ToString() == "0")
+                {
+                    return "-1";
+                }
+                var a = JArray.Parse(JObject.Parse(responseString).SelectToken("entries").ToString());
+                foreach (var b in a)
+                {
+                    outputData = b.SelectToken("id").ToString();
+                }
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"{DateTime.Now} -  Непредвиденная ошибка при попытке получить ID путевого листа. Обратитесь к разработчику. Код ошибки - {e.Message}");
+            }
+            return outputData;
+        }
         public async Task<string> SaveWaybillPDF(Driver driver)
         {
             await Authenticate();
             WebResponse response;
-            WebRequest request = WebRequest.Create($"https://art.taxi.mos.ru/api/waybills/" + "909208" + "/pdf");
+            WebRequest request = WebRequest.Create($"https://art.taxi.mos.ru/api/waybills/" + driver.Waybill + "/pdf");
             try
             {
                 request.Method = "GET";
@@ -178,10 +213,10 @@ namespace OperatorBot
                 response = request.GetResponse();
                 var remoteStream = response.GetResponseStream();
                 string FileName = $"{DateTime.Now.Month}.{DateTime.Now.Day}-{driver.C_FIO}-{driver.Waybill}.pdf";
-                var localStream = File.Create(FileName); 
+                var localStream = File.Create(FileName);
                 int bytesProcessed = 0;
                 byte[] buffer = new byte[1024];
-                 
+
                 //перевожу ответ в стрим и запихиваю его в файл
                 int bytesRead;
                 do
@@ -202,22 +237,32 @@ namespace OperatorBot
                 Console.WriteLine($"{DateTime.Now} - Ошибка в блоке получения файла путевого листа. Код - {e.Message}");
                 return "";
             }
-           
+
         }
 
-    public async Task<string> CreatePreMed(Driver driver)
+        public async Task<string> CreateMed(Driver driver, bool B_Post)
         {
             var outputData = "";
             await Authenticate();
             HttpWebResponse response;
-            WebRequest request = WebRequest.Create($"https://art.taxi.mos.ru/api/checkups/PRE_MED");
+            WebRequest request;
+            if (!B_Post)
+                request = WebRequest.Create($"https://art.taxi.mos.ru/api/checkups/PRE_MED");
+            else
+                request = WebRequest.Create($"https://art.taxi.mos.ru/api/checkups/POST_MED");
             try
             {
                 request.Method = "POST";
                 request.Headers.Add("Authorization", $"{BToken}");
                 request.PreAuthenticate = true;
                 request.ContentType = "application/json";
-                var postData = "{\"checkupData\": {\"bloodPressureDia\": \"70\",\"bloodPressureSys\": \"120\",\"bodyTemperature\": \"36\",\"alcoholTestPassed\": true},\"type\":\"PRE_MED\",\"specialist\": {\"id\": 37065},\"waybill\":{\"id\": "+driver.Waybill+"}}";
+                string postData = "";
+
+                if (!B_Post)
+                    postData = "{\"checkupData\": {\"bloodPressureDia\": \"70\",\"bloodPressureSys\": \"120\",\"bodyTemperature\": \"36\",\"alcoholTestPassed\": true},\"type\":\"PRE_MED\",\"specialist\": {\"id\": 37065},\"waybill\":{\"id\": " + driver.Waybill + "}}";
+                else
+                    postData = "{\"checkupData\": {\"bloodPressureDia\": \"70\",\"bloodPressureSys\": \"120\",\"bodyTemperature\": \"36\",\"alcoholTestPassed\": true},\"type\":\"POST_MED\",\"specialist\": {\"id\": 37065},\"waybill\":{\"id\": " + driver.Waybill + "}}";
+
                 var data = Encoding.ASCII.GetBytes(postData);
                 request.ContentLength = data.Length;
 
@@ -228,7 +273,10 @@ namespace OperatorBot
 
                 response = (HttpWebResponse)request.GetResponse();
                 var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
-                outputData = "Медосмотр успешно пройден!";
+                if (!B_Post)
+                    outputData = "Пререйсовый медосмотр успешно пройден!";
+                else
+                    outputData = "Послерейсовый медосмотр успешно пройден!";
             }
             catch (Exception e)
             {
@@ -236,20 +284,30 @@ namespace OperatorBot
             }
             return outputData;
         }
-        public async Task<string> CreatePreTech(Driver driver, string probeg)
+        public async Task<string> CreateTech(Driver driver, string probeg, bool B_Post)
         {
             var outputData = "";
             await Authenticate();
-            await Task.Delay(600000);
+            Task.Delay(60000).Wait();
+            WebRequest request;
             HttpWebResponse response;
-            WebRequest request = WebRequest.Create($"https://art.taxi.mos.ru/api/checkups/PRE_MED");
+            if (!B_Post)
+                request = WebRequest.Create($"https://art.taxi.mos.ru/api/checkups/PRE_TECH");
+            else
+                request = WebRequest.Create($"https://art.taxi.mos.ru/api/checkups/POST_TECH");
             try
             {
                 request.Method = "POST";
                 request.Headers.Add("Authorization", $"{BToken}");
                 request.PreAuthenticate = true;
                 request.ContentType = "application/json";
-                var postData = "{\"checkupData\": {\"desinfected\": true,\"odometerData\": \""+probeg+"\"},\"type\":\"PRE_TECH\",\"specialist\": {\"id\": 47176},\"waybill\":{\"id\": " + driver.Waybill + "}}";
+                string postData = "";
+                //Если параметр передаётся не послерейсовый, то и бади другой будет
+                if (!B_Post)
+                    postData = "{\"checkupData\": {\"desinfected\": true,\"odometerData\": \"" + probeg + "\"},\"type\":\"PRE_TECH\",\"specialist\": {\"id\": 47176},\"waybill\":{\"id\": " + driver.Waybill + "}}";
+                else
+                    postData = "{\"checkupData\": {\"desinfected\": true,\"odometerData\": \"" + probeg + "\"},\"type\":\"POST_TECH\",\"specialist\": {\"id\": 47176},\"waybill\":{\"id\": " + driver.Waybill + "}}";
+
                 var data = Encoding.ASCII.GetBytes(postData);
                 request.ContentLength = data.Length;
 
@@ -260,7 +318,10 @@ namespace OperatorBot
 
                 response = (HttpWebResponse)request.GetResponse();
                 var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
-                outputData = "Техосмотр успешно пройден!";
+                if (!B_Post)
+                    outputData = "Пререйсовый техосмотр успешно пройден!";
+                else
+                    outputData = "Послерейсовый техосмотр успешно пройден!";
             }
             catch (Exception e)
             {
