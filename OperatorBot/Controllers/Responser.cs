@@ -94,7 +94,7 @@ namespace OperatorBot
                     employer = JArray.Parse(responseString)[0].SelectToken("employeeId").ToString();
                     Console.WriteLine($"{DateTime.Now} - Получен employeeId: {employer} ");
                     //Выполнить через 2 секунды, чтобы ошибку не словить
-                    await Task.Delay(2000);
+                    Task.Delay(1000).Wait();
                     await Authenticate();
 
                 }
