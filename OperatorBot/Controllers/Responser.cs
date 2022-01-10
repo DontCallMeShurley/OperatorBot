@@ -35,7 +35,7 @@ namespace OperatorBot
         }
         public async Task<string> GetFIOorErrorAsync(string IdEmployer)
         {
-            await Authenticate();
+            Authenticate().Wait();
             string C_FIO;
             HttpWebResponse response;
             WebRequest request = WebRequest.Create($"https://art.taxi.mos.ru/api/employees/" + IdEmployer);
@@ -50,7 +50,7 @@ namespace OperatorBot
                 C_FIO = JObject.Parse(responseString).SelectToken("user").SelectToken("lastName").ToString() + " " + JObject.Parse(responseString).SelectToken("user").SelectToken("firstName").ToString() + " " + JObject.Parse(responseString).SelectToken("user").SelectToken("patronymic").ToString();
                 var a = response.StatusCode;
             }
-            catch
+            catch (Exception e)
             {
                 C_FIO = "403. Ошибка. Вы не найдены в системе, или система не отвечает, или данный водитель не принадлежит выбранному перевозчику. Повторите попытку, введя корректные данные";
             }
@@ -94,20 +94,22 @@ namespace OperatorBot
                     employer = JArray.Parse(responseString)[0].SelectToken("employeeId").ToString();
                     Console.WriteLine($"{DateTime.Now} - Получен employeeId: {employer} ");
                     //Выполнить через 2 секунды, чтобы ошибку не словить
-                    Task.Delay(1000).Wait();
-                    await Authenticate();
+                    
 
                 }
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{DateTime.Now}- Ошибка в блоке получения кода работника или BTokena. Возможно, слишком часто стучимся к API КИС АРТ. Обратитесь к разработчику. Код ошибки - {e.Message}");
+                Console.WriteLine($"{DateTime.Now}- Ошибка в блоке получения кода работника или BTokena. Обратитесь к разработчику. Код ошибки - {e.Message}");
+                throw new Exception($"{DateTime.Now}- Ошибка в блоке получения кода работника или BTokena.  Обратитесь к разработчику. Код ошибки - {e.Message}");
             }
+            Task.Delay(2000).Wait();
+            await Authenticate();
 
         }
         public async Task<List<Cars>> GetCarsAsync()
         {
-            await Authenticate();
+            Authenticate().Wait();
             HttpWebResponse response;
             WebRequest request = WebRequest.Create($"https://art.taxi.mos.ru/api/vehicles");
             var outputData = new List<Cars>();
@@ -126,16 +128,17 @@ namespace OperatorBot
                 }
 
             }
-            catch
+            catch (Exception e)
             {
                 Console.WriteLine($"{DateTime.Now} -  Непредвиденная ошибка при попытке получить список доступных машин. Обратитесь к разработчику");
+                throw new Exception($"{DateTime.Now} -  Непредвиденная ошибка при попытке получить список доступных машин. Обратитесь к разработчику. Код ошибки - {e.Message}");
             }
             return outputData;
         }
         //Вернёт ошибку или ID созданного путевого листа
         public async Task<string> CreateWaybills(Driver driver, string cars)
         {
-            await Authenticate();
+            Authenticate().Wait();
             string outputData = "";
             HttpWebResponse response;
             WebRequest request = WebRequest.Create($"https://art.taxi.mos.ru/api/waybills");
@@ -165,6 +168,7 @@ namespace OperatorBot
             return outputData;
         }
 
+        //Получение ИД путевого листа
         public async Task<string> GetWaybill(Driver driver)
         {
             await Authenticate();
@@ -199,9 +203,10 @@ namespace OperatorBot
             }
             return outputData;
         }
+        //Получение путевого листа в файл
         public async Task<string> SaveWaybillPDF(Driver driver)
         {
-            await Authenticate();
+            Authenticate().Wait();
             WebResponse response;
             WebRequest request = WebRequest.Create($"https://art.taxi.mos.ru/api/waybills/" + driver.Waybill + "/pdf");
             try
@@ -240,10 +245,31 @@ namespace OperatorBot
 
         }
 
+        public async Task DeleteWaybill(Driver driver)
+        {
+            Authenticate().Wait();
+            WebResponse response;
+            WebRequest request = WebRequest.Create($"https://art.taxi.mos.ru/api/waybills/" + driver.Waybill);
+            try
+            {
+                request.Method = "DELETE";
+                request.Headers.Add("Authorization", $"{BToken}");
+                request.PreAuthenticate = true;
+                request.Timeout = 3000;
+                response = request.GetResponse();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"{DateTime.Now} - Ошибка в блоке получения файла путевого листа. Код - {e.Message}");
+                throw new Exception($"{DateTime.Now} - Ошибка в блоке получения файла путевого листа. Код - {e.Message}");
+            }
+
+        }
+
         public async Task<string> CreateMed(Driver driver, bool B_Post)
         {
             var outputData = "";
-            await Authenticate();
+            Authenticate().Wait();
             HttpWebResponse response;
             WebRequest request;
             if (!B_Post)
@@ -287,7 +313,7 @@ namespace OperatorBot
         public async Task<string> CreateTech(Driver driver, string probeg, bool B_Post)
         {
             var outputData = "";
-            await Authenticate();
+            Authenticate().Wait();
             Task.Delay(60000).Wait();
             WebRequest request;
             HttpWebResponse response;
