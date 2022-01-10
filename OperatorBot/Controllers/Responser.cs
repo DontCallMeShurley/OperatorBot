@@ -58,6 +58,7 @@ namespace OperatorBot
         }
         public async Task Authenticate()
         {
+            Task.Delay(1000).Wait();
             //Вернёт employers если он не указан, или Bearer token
             WebRequest request = WebRequest.Create("https://art.taxi.mos.ru/api/authenticate");
             request.Method = "POST";
@@ -74,28 +75,37 @@ namespace OperatorBot
             {
                 stream.Write(data, 0, data.Length);
             }
-            //if (BToken != null && employer != null)
-            //{
-            //    Console.WriteLine($"{DateTime.Now} - Аутенфикация уже проведена");
-            //    return;
-            //}
+
+            //буду проверять BToken на предмет возможности отправки запроса
+            if (BToken != null && employer != null)
+            {
+                try
+                {
+                    var request1 = WebRequest.Create($"https://art.taxi.mos.ru/api/employees/");
+                    request1.Method = "GET";
+                    request1.Headers.Add("Authorization", $"{BToken}");
+                    request1.PreAuthenticate = true;
+                    var res = (HttpWebResponse)request1.GetResponseAsync().Result;
+                    return;
+                }
+                catch (Exception e)
+                {
+                }
+            }
             try
             {
                 var response = (HttpWebResponse)request.GetResponse();
                 var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
-
+                
                 if (!string.IsNullOrEmpty(employer))
                 {
                     BToken = JObject.Parse(responseString).SelectToken("token").ToString();
-                    Console.WriteLine($"{DateTime.Now} - Получен BToken: {BToken} ");
+                    Console.WriteLine($"{DateTime.Now} - Получен BToken");
                 }
                 else
                 {
                     employer = JArray.Parse(responseString)[0].SelectToken("employeeId").ToString();
-                    Console.WriteLine($"{DateTime.Now} - Получен employeeId: {employer} ");
-                    //Выполнить через 2 секунды, чтобы ошибку не словить
-                    
-
+                    Console.WriteLine($"{DateTime.Now} - Получен employeeId ");
                 }
             }
             catch (Exception e)
@@ -103,8 +113,12 @@ namespace OperatorBot
                 Console.WriteLine($"{DateTime.Now}- Ошибка в блоке получения кода работника или BTokena. Обратитесь к разработчику. Код ошибки - {e.Message}");
                 throw new Exception($"{DateTime.Now}- Ошибка в блоке получения кода работника или BTokena.  Обратитесь к разработчику. Код ошибки - {e.Message}");
             }
-            Task.Delay(2000).Wait();
-            await Authenticate();
+            //Выполнить через 2 секунды, чтобы ошибку не словить
+            if (BToken == null)
+            {
+                Task.Delay(1000).Wait();
+                Authenticate().Wait();
+            }
 
         }
         public async Task<List<Cars>> GetCarsAsync()
@@ -171,7 +185,7 @@ namespace OperatorBot
         //Получение ИД путевого листа
         public async Task<string> GetWaybill(Driver driver)
         {
-            await Authenticate();
+            Authenticate().Wait();
             HttpWebResponse response;
             WebRequest request = WebRequest.Create($"https://art.taxi.mos.ru/api/waybills?search=" + driver.C_FIO.Substring(0, driver.C_FIO.IndexOf(" ")) + "&" + driver.C_FIO.Substring(driver.C_FIO.IndexOf(" ") + 1, driver.C_FIO.IndexOf(" ", driver.C_FIO.IndexOf(" ")) + 1));
             //var outputData = new List<Cars>();
@@ -314,7 +328,7 @@ namespace OperatorBot
         {
             var outputData = "";
             Authenticate().Wait();
-            Task.Delay(60000).Wait();
+            Task.Delay(6000).Wait();
             WebRequest request;
             HttpWebResponse response;
             if (!B_Post)
