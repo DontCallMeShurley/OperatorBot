@@ -81,11 +81,12 @@ namespace OperatorBot
             {
                 try
                 {
-                    var request1 = WebRequest.Create($"https://art.taxi.mos.ru/api/employees/");
+                    var request1 = WebRequest.Create($"https://art.taxi.mos.ru/api/employees");
                     request1.Method = "GET";
                     request1.Headers.Add("Authorization", $"{BToken}");
                     request1.PreAuthenticate = true;
                     var res = (HttpWebResponse)request1.GetResponseAsync().Result;
+                    Console.WriteLine($"{DateTime.Now} - Пропуск аутенфикации");
                     return;
                 }
                 catch (Exception e)
