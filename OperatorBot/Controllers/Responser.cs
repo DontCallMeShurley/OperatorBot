@@ -96,7 +96,7 @@ namespace OperatorBot
             {
                 var response = (HttpWebResponse)request.GetResponse();
                 var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
-                
+
                 if (!string.IsNullOrEmpty(employer))
                 {
                     BToken = JObject.Parse(responseString).SelectToken("token").ToString();
@@ -247,7 +247,7 @@ namespace OperatorBot
 
                 localStream.Flush();
                 localStream.Close();
-                Console.WriteLine("test");
+                Console.WriteLine($"{DateTime.Now} - Сформирован файл путевого листа - [{FileName}]");
                 return FileName;
 
             }
@@ -328,7 +328,10 @@ namespace OperatorBot
         {
             var outputData = "";
             Authenticate().Wait();
-            Task.Delay(6000).Wait();
+            if (B_Post)
+                Task.Delay(10000).Wait();
+            else
+                Task.Delay(600000).Wait();
             WebRequest request;
             HttpWebResponse response;
             if (!B_Post)
