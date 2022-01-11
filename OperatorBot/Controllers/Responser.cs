@@ -107,6 +107,7 @@ namespace OperatorBot
                     employer = JArray.Parse(responseString)[0].SelectToken("employeeId").ToString();
                     Console.WriteLine($"{DateTime.Now} - Получен employeeId ");
                 }
+                Task.Delay(1000).Wait();
             }
             catch (Exception e)
             {
@@ -299,7 +300,7 @@ namespace OperatorBot
                 string postData = "";
 
                 if (!B_Post)
-                    postData = "{\"checkupData\": {\"bloodPressureDia\": \"70\",\"bloodPressureSys\": \"120\",\"bodyTemperature\": \"36\",\"alcoholTestPassed\": true},\"type\":\"PRE_MED\",\"specialist\": {\"id\": 37065},\"waybill\":{\"id\": " + driver.Waybill + "}}";
+                    postData = "{\"checkupData\": {\"bloodPressureDia\": \"70\",\"bloodPressureSys\": \"120\",\"bodyTemperature\": \"36\",\"alcoholTestPassed\": true},\"type\":\"PRE_MED\",\"specialist\": {\"id\": 37065},\"waybill\":{\"id\": " + driver.Waybill + "},\"dateTimePassed\": \"2012-01-11T11:13:31.267+00:00\"}";
                 else
                     postData = "{\"checkupData\": {\"bloodPressureDia\": \"70\",\"bloodPressureSys\": \"120\",\"bodyTemperature\": \"36\",\"alcoholTestPassed\": true},\"type\":\"POST_MED\",\"specialist\": {\"id\": 37065},\"waybill\":{\"id\": " + driver.Waybill + "}}";
 
@@ -314,7 +315,7 @@ namespace OperatorBot
                 response = (HttpWebResponse)request.GetResponse();
                 var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
                 if (!B_Post)
-                    outputData = "Пререйсовый медосмотр успешно пройден!";
+                    outputData = "Предрейсовый медосмотр успешно пройден!";
                 else
                     outputData = "Послерейсовый медосмотр успешно пройден!";
             }
@@ -328,10 +329,10 @@ namespace OperatorBot
         {
             var outputData = "";
             Authenticate().Wait();
-            if (B_Post)
-                Task.Delay(10000).Wait();
-            else
-                Task.Delay(600000).Wait();
+            //if (B_Post)
+            //    Task.Delay(10000).Wait();
+            //else
+            //    Task.Delay(600000).Wait();
             WebRequest request;
             HttpWebResponse response;
             if (!B_Post)
@@ -361,8 +362,50 @@ namespace OperatorBot
 
                 response = (HttpWebResponse)request.GetResponse();
                 var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
+
+                #region ChangeDate
+                //Меняю дату созданного осмотра. Логика Кис Арта такая, что если ты создаёшь осмотр, то дату не можешь поставить, ставится текущая, НО если ты редактируешь осмотр, то дату менять позволяет
+                //Берём айди созданного осмотра
+                var id = JObject.Parse(responseString).SelectToken("id").ToString();
+                //Берём дату создания
+                DateTimeOffset dateCreate = (DateTimeOffset)JObject.Parse(responseString).SelectToken("dateTimePassed");
+
+                //Кис арт присылает время по гринвичу.. Он на своей стороне  ставит +3 часа, я делаю на своей стороне то же самое
+                string stringDate = dateCreate.AddHours(-3).ToString("yyyy-MM-dd'T'HH:mm:ss.fff") + "-00:10";
+                //удаляем старый запрос
+                request.Abort();
+                //ждём 2 секунды
+                Task.Delay(2000).Wait();
+
                 if (!B_Post)
-                    outputData = "Пререйсовый техосмотр успешно пройден!";
+                    request = WebRequest.Create($"https://art.taxi.mos.ru/api/checkups/PRE_TECH/" + id);
+                else
+                    request = WebRequest.Create($"https://art.taxi.mos.ru/api/checkups/POST_TECH/" + id);
+
+                request.Method = "POST";
+                request.Headers.Add("Authorization", $"{BToken}");
+                request.PreAuthenticate = true;
+                request.ContentType = "application/json";
+
+                if (!B_Post)
+                    postData = "{\"checkupData\": {\"desinfected\": true,\"odometerData\": \"" + probeg + "\"},\"type\":\"PRE_TECH\",\"specialist\": {\"id\": 47176},\"waybill\":{\"id\": " + driver.Waybill + "}, \"id\": " + id + ", \"dateTimePassed\": \"" + stringDate + "\"}";
+                else
+                    postData = "{\"checkupData\": {\"washed\": true,\"odometerData\": \"" + probeg + "\"},\"type\":\"POST_TECH\",\"specialist\": {\"id\": 47176},\"waybill\":{\"id\": " + driver.Waybill + "},\"id\": " + id + ", \"dateTimePassed\": \"" + stringDate + "\"}";
+
+                data = Encoding.ASCII.GetBytes(postData);
+                request.ContentLength = data.Length;
+
+                using (var stream = request.GetRequestStream())
+                {
+                    stream.Write(data, 0, data.Length);
+                }
+
+                response = (HttpWebResponse)request.GetResponse();
+                responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
+                #endregion
+
+                if (!B_Post)
+                    outputData = "Предрейсовый техосмотр успешно пройден!";
                 else
                     outputData = "Послерейсовый техосмотр успешно пройден!";
             }

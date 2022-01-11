@@ -166,7 +166,7 @@ namespace OperatorBot
                             }
                             if (Iteration.Value == "Ввод пробега")
                             {
-                                await client.SendTextMessageAsync(msg.Chat.Id, "Создание пререйсового осмотра механиком (процесс занимает 10 минут)...");
+                                await client.SendTextMessageAsync(msg.Chat.Id, "Создание предрейсового осмотра механиком...");
                                 iterator.Remove(msg.Chat.Id);
                                 iterator.Add(msg.Chat.Id, "МеханикПре");
                                 var ans = MechanicResponser.CreateTech(driver, msg.Text, false);
@@ -188,7 +188,7 @@ namespace OperatorBot
                             //Пост теч
                             else if (Iteration.Value == "Ввод пробега(Пост)")
                             {
-                                await client.SendTextMessageAsync(msg.Chat.Id, "Создание послерейсового осмотра механиком (процесс занимает 10 минут)...");
+                                await client.SendTextMessageAsync(msg.Chat.Id, "Создание послерейсового осмотра механиком...");
                                 iterator.Remove(msg.Chat.Id);
                                 iterator.Add(msg.Chat.Id, "МеханикПост");
                                 var ans = MechanicResponser.CreateTech(driver, msg.Text, true);
@@ -311,8 +311,8 @@ namespace OperatorBot
                 await client.SendTextMessageAsync(msg.Chat.Id, $"По техническим причинам выдача путевого листа невозможна. Обратитесь к вашему администратору с указанием следующего кода ошибки");
                 await client.SendTextMessageAsync(msg.Chat.Id, $"{e1.Message}");
                 await client.SendTextMessageAsync(msg.Chat.Id, "Вам будут выданы данные, по которым вы должны заполнить путевой лист ВРУЧНУЮ ");
-                await client.SendTextMessageAsync(msg.Chat.Id, $"Осмотр медика: Чашечкина Р. А - {DateTime.Now.Hour}:{DateTime.Now.Minute}");
-                await client.SendTextMessageAsync(msg.Chat.Id, $"Осмотр механика: Тихонов А. Н. - {DateTime.Now.AddMinutes(10).Hour}:{DateTime.Now.AddMinutes(10).Minute}");
+                await client.SendTextMessageAsync(msg.Chat.Id, $"Осмотр медика: Чашечкина Р. А - {DateTime.Now.ToString("HH")}:{DateTime.Now.ToString("mm")}.");
+                await client.SendTextMessageAsync(msg.Chat.Id, $"Осмотр механика: Тихонов А. Н. - {DateTime.Now.AddMinutes(10).ToString("HH")}:{DateTime.Now.AddMinutes(10).ToString("mm")}");
 
 
             }
