@@ -22,7 +22,7 @@ namespace OperatorBot
 
     class Program
     {
-        private static string token { get; set; } = "2137487671:AAGa9fv0epTfEXH-81o7IzIGpBPDQtoB3AM";
+        private static string token { get; set; } = "5098666633:AAFOUwwYkIUaCl-Bzyr495IXiKtq0BiE07E";
         private static TelegramBotClient client;
         private static int Iteration = 0;
         private static Context _db = new Context();
@@ -52,17 +52,17 @@ namespace OperatorBot
             Console.WriteLine($"{DateTime.Now} - Пришло сообщение с текстом: {msg.Text}. Имя пользователя - {msg.Chat.Username}. ID чата с пользователем - {msg.Chat.Id}", Color.Green);
             var driver = _db.Driver.FirstOrDefault(x => x.UserName == msg.Chat.Username);
             if (driver != null)
-            if (driver.licenser_id != null)
-            {
-                var lice = _db.Licenser.FirstOrDefault(x => x.ID == driver.licenser_id);
-
-                if (lice != null)
+                if (driver.licenser_id != null)
                 {
-                    responser.msidn = lice.msidn.Replace("\r\n","");
-                    responser.password = lice.password.Replace("\r\n","");
+                    var lice = _db.Licenser.FirstOrDefault(x => x.ID == driver.licenser_id);
+
+                    if (lice != null)
+                    {
+                        responser.msidn = lice.msidn.Replace("\r\n", "");
+                        responser.password = lice.password.Replace("\r\n", "");
+                    }
                 }
-            }
-            
+
             try
             {
                 if (msg.Text != null)
@@ -92,8 +92,8 @@ namespace OperatorBot
                             var Iteration = iterator.FirstOrDefault(x => x.Key == msg.Chat.Id);
                             if (Iteration.Value == "Ввод ИД водителя")
                             {
-                                responser.msidn = driver.licenser.msidn.Replace("\r\n","");
-                                responser.password = driver.licenser.password.Replace("\r\n","");
+                                responser.msidn = driver.licenser.msidn.Replace("\r\n", "");
+                                responser.password = driver.licenser.password.Replace("\r\n", "");
                                 var C_FIO = responser.GetFIOorErrorAsync(msg.Text).Result;
                                 if (!C_FIO.StartsWith("403"))
                                 {
@@ -238,8 +238,8 @@ namespace OperatorBot
                         else
                         {
                             var lic = _db.Licenser.FirstOrDefault(a => a.ID == driver.licenser_id);
-                            responser.msidn = lic.msidn.Replace("\r\n","");
-                            responser.password = lic.password.Replace("\r\n","");
+                            responser.msidn = lic.msidn.Replace("\r\n", "");
+                            responser.password = lic.password.Replace("\r\n", "");
                             var a = responser.GetWaybill(driver);
 
                             //По сути здесь начинается процесс получения путевого листа. Нужно выбрать ИД машины и запустить итерационный процесс
@@ -247,11 +247,11 @@ namespace OperatorBot
                             {
                                 if (driver.licenser_id != null)
                                     driver.licenser = _db.Licenser.Where(x => x.ID == driver.licenser_id).FirstOrDefault();
-                                await client.SendTextMessageAsync(msg.Chat.Id, $"Здравствуйте, {driver.C_FIO}. Выберите вашу машину из списка ниже, введя число, которое стоит рядом с машиной", replyMarkup: GetButtons());
-                                responser.msidn = driver.licenser.msidn.Replace("\r\n","");
+                                await client.SendTextMessageAsync(msg.Chat.Id, $"Здравствуйте, {driver.C_FIO}. Выберите вашу машину из списка ниже, введя число, которое стоит рядом с машиной");
+                                responser.msidn = driver.licenser.msidn.Replace("\r\n", "");
 
-                                responser.password = driver.licenser.password.Replace("\r\n","");
-                                
+                                responser.password = driver.licenser.password.Replace("\r\n", "");
+
                                 var Cars = responser.GetCarsAsync().Result;
                                 foreach (Cars car in Cars.OrderBy(x => x.ID))
                                 {
@@ -328,6 +328,7 @@ namespace OperatorBot
                 }
             };
         }
+        //Для незареганных
         private static IReplyMarkup GetButtons1()
         {
             return new ReplyKeyboardMarkup

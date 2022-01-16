@@ -50,7 +50,7 @@ namespace OperatorBot
                 C_FIO = JObject.Parse(responseString).SelectToken("user").SelectToken("lastName").ToString() + " " + JObject.Parse(responseString).SelectToken("user").SelectToken("firstName").ToString() + " " + JObject.Parse(responseString).SelectToken("user").SelectToken("patronymic").ToString();
                 var a = response.StatusCode;
             }
-            catch (Exception e)
+            catch 
             {
                 C_FIO = "403. Ошибка. Вы не найдены в системе, или система не отвечает, или данный водитель не принадлежит выбранному перевозчику. Повторите попытку, введя корректные данные";
             }
@@ -76,7 +76,7 @@ namespace OperatorBot
                 stream.Write(data, 0, data.Length);
             }
 
-            //буду проверять BToken на предмет возможности отправки запроса
+            //буду проверять BToken на предмет возможности отправки запроса, чтобы не авторизовывать уже авторизованного и у которого BToken живой
             if (BToken != null && employer != null)
             {
                 try
@@ -86,7 +86,9 @@ namespace OperatorBot
                     request1.Headers.Add("Authorization", $"{BToken}");
                     request1.PreAuthenticate = true;
                     var res = (HttpWebResponse)request1.GetResponseAsync().Result;
+                    Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine($"{DateTime.Now} - Пропуск аутенфикации");
+                    Console.ForegroundColor = ConsoleColor.White;
                     return;
                 }
                 catch (Exception e)
@@ -101,18 +103,24 @@ namespace OperatorBot
                 if (!string.IsNullOrEmpty(employer))
                 {
                     BToken = JObject.Parse(responseString).SelectToken("token").ToString();
+                    Console.ForegroundColor = ConsoleColor.Green; 
                     Console.WriteLine($"{DateTime.Now} - Получен BToken");
+                    Console.ForegroundColor = ConsoleColor.White;
                 }
                 else
                 {
                     employer = JArray.Parse(responseString)[0].SelectToken("employeeId").ToString();
+                    Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine($"{DateTime.Now} - Получен employeeId ");
+                    Console.ForegroundColor = ConsoleColor.White;
                 }
                 Task.Delay(1000).Wait();
             }
             catch (Exception e)
             {
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"{DateTime.Now}- Ошибка в блоке получения кода работника или BTokena. Обратитесь к разработчику. Код ошибки - {e.Message}");
+                Console.ForegroundColor = ConsoleColor.White;
                 throw new Exception($"{DateTime.Now}- Ошибка в блоке получения кода работника или BTokena.  Обратитесь к разработчику. Код ошибки - {e.Message}");
             }
             //Выполнить через 2 секунды, чтобы ошибку не словить
@@ -146,7 +154,9 @@ namespace OperatorBot
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{DateTime.Now} -  Непредвиденная ошибка при попытке получить список доступных машин. Обратитесь к разработчику");
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"{DateTime.Now} -  Непредвиденная ошибка при попытке получить список доступных машин. Обратитесь к разработчику. Код ошибки - {e.Message}");
+                Console.ForegroundColor = ConsoleColor.White;
                 throw new Exception($"{DateTime.Now} -  Непредвиденная ошибка при попытке получить список доступных машин. Обратитесь к разработчику. Код ошибки - {e.Message}");
             }
             return outputData;
@@ -215,7 +225,9 @@ namespace OperatorBot
             }
             catch (Exception e)
             {
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"{DateTime.Now} -  Непредвиденная ошибка при попытке получить ID путевого листа. Обратитесь к разработчику. Код ошибки - {e.Message}");
+                Console.ForegroundColor = ConsoleColor.White;
             }
             return outputData;
         }
@@ -249,13 +261,17 @@ namespace OperatorBot
 
                 localStream.Flush();
                 localStream.Close();
+                Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine($"{DateTime.Now} - Сформирован файл путевого листа - [{FileName}]");
+                Console.ForegroundColor = ConsoleColor.White;
                 return FileName;
 
             }
             catch (Exception e)
             {
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"{DateTime.Now} - Ошибка в блоке получения файла путевого листа. Код - {e.Message}");
+                Console.ForegroundColor = ConsoleColor.White;
                 return "";
             }
 
@@ -276,7 +292,9 @@ namespace OperatorBot
             }
             catch (Exception e)
             {
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"{DateTime.Now} - Ошибка в блоке получения файла путевого листа. Код - {e.Message}");
+                Console.ForegroundColor = ConsoleColor.White;
                 throw new Exception($"{DateTime.Now} - Ошибка в блоке получения файла путевого листа. Код - {e.Message}");
             }
 
