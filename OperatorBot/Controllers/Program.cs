@@ -50,7 +50,15 @@ namespace OperatorBot
         {
             var msg = e.Message;
             Console.WriteLine($"{DateTime.Now} - Пришло сообщение с текстом: {msg.Text}. Имя пользователя - {msg.Chat.Username}. ID чата с пользователем - {msg.Chat.Id}", Color.Green);
-            var driver = _db.Driver.FirstOrDefault(x => x.UserName == msg.Chat.Username);
+            Driver driver;
+            try
+            {
+                 driver = _db.Driver.FirstOrDefault(x => x.UserName == msg.Chat.Username);
+            }
+            catch
+            {
+                 driver = new Driver();
+            }
             if (driver != null)
                 if (driver.licenser_id != null)
                 {

@@ -119,9 +119,9 @@ namespace OperatorBot
             catch (Exception e)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"{DateTime.Now}- Ошибка в блоке получения кода работника или BTokena. Обратитесь к разработчику. Код ошибки - {e.Message}");
+                Console.WriteLine($"{DateTime.Now} - Ошибка в блоке получения кода работника или BTokena. Обратитесь к разработчику. Код ошибки - {e.Message}");
                 Console.ForegroundColor = ConsoleColor.White;
-                throw new Exception($"{DateTime.Now}- Ошибка в блоке получения кода работника или BTokena.  Обратитесь к разработчику. Код ошибки - {e.Message}");
+                throw new Exception($"{DateTime.Now} - Ошибка в блоке получения кода работника или BTokena.  Обратитесь к разработчику. Код ошибки - {e.Message}");
             }
             //Выполнить через 2 секунды, чтобы ошибку не словить
             if (BToken == null)
