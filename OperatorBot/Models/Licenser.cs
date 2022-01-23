@@ -14,6 +14,7 @@ namespace OperatorBot.Models
         public string ID { get; set; }
         public string msidn { get; set; }
         public string password { get; set; }
+        public string employerId { get; set; }
         public List<Driver> drivers { get; set; }
     }
 }

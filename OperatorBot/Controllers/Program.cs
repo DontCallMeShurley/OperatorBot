@@ -51,13 +51,14 @@ namespace OperatorBot
             var msg = e.Message;
             Console.WriteLine($"{DateTime.Now} - Пришло сообщение с текстом: {msg.Text}. Имя пользователя - {msg.Chat.Username}. ID чата с пользователем - {msg.Chat.Id}", Color.Green);
             Driver driver;
+            var Iteration = iterator.FirstOrDefault(x => x.Key == msg.Chat.Id);
             try
             {
-                 driver = _db.Driver.FirstOrDefault(x => x.UserName == msg.Chat.Username);
+                driver = _db.Driver.FirstOrDefault(x => x.UserName == msg.Chat.Username);
             }
             catch
             {
-                 driver = new Driver();
+                driver = new Driver();
             }
             if (driver != null)
                 if (driver.licenser_id != null)
@@ -68,6 +69,7 @@ namespace OperatorBot
                     {
                         responser.msidn = lice.msidn.Replace("\r\n", "");
                         responser.password = lice.password.Replace("\r\n", "");
+                        responser.employer = lice.employerId;
                     }
                 }
 
@@ -86,27 +88,29 @@ namespace OperatorBot
                         iterator.Remove(msg.Chat.Id);
                         if (driver == null)
                             await client.SendTextMessageAsync(msg.Chat.Id, $"Добро пожаловать в Бота - Оператора, {msg.Chat.FirstName + " " + msg.Chat.LastName}. " +
-                                                                     $"Я помогу получить Вам путевой лист на поездку. Для начала, выберите действие снизу", replyMarkup: GetButtons1());
+                                                                     $"Я помогу получить Вам путевой лист на поездку. Для начала, выберите действие снизу", replyMarkup: GetButtons(2));
                         else
                             await client.SendTextMessageAsync(msg.Chat.Id, $"Добро пожаловать в Бота - Оператора, {msg.Chat.FirstName + " " + msg.Chat.LastName}. " +
-                                                                     $"Я помогу получить Вам путевой лист на поездку. Для начала, выберите действие снизу", replyMarkup: GetButtons());
+                                                                     $"Я помогу получить Вам путевой лист на поездку. Для начала, выберите действие снизу", replyMarkup: GetButtons(0));
 
                     }
                     //Ответы кастомные для регистрации первоначальной при нажатии на получение путевого листа начинаются итерации. Все шаги проходят последовательно
-                    if (msg.Text != "Получить/Закрыть путевой лист" && msg.Text != "Выбрать или изменить перевозчика")
+                    if (msg.Text != "Получить/Закрыть путевой лист" && msg.Text != "Выбрать или изменить перевозчика" && Iteration.Value != "Ответ на вопрос закрытия ПЛ")
                     {
                         if (iterator.TryGetValue(msg.Chat.Id, out var state))
                         {
-                            var Iteration = iterator.FirstOrDefault(x => x.Key == msg.Chat.Id);
                             if (Iteration.Value == "Ввод ИД водителя")
                             {
+
                                 responser.msidn = driver.licenser.msidn.Replace("\r\n", "");
                                 responser.password = driver.licenser.password.Replace("\r\n", "");
+                                responser.employer = driver.licenser.employerId;
+
                                 var C_FIO = responser.GetFIOorErrorAsync(msg.Text).Result;
                                 if (!C_FIO.StartsWith("403"))
                                 {
                                     await client.SendTextMessageAsync(msg.Chat.Id,
-                                        $"Авторизация успешна. Добро пожаловать, {C_FIO}. Теперь вы можете начать процедуру получения путевого листа, нажав на соответствующую кнопку", replyMarkup: GetButtons());
+                                        $"Авторизация успешна. Добро пожаловать, {C_FIO}. Теперь вы можете начать процедуру получения путевого листа, нажав на соответствующую кнопку", replyMarkup: GetButtons(0));
                                     driver.Code = msg.Text;
                                     driver.C_FIO = C_FIO.ToString();
 
@@ -201,7 +205,7 @@ namespace OperatorBot
                                 iterator.Add(msg.Chat.Id, "МеханикПост");
                                 var ans = MechanicResponser.CreateTech(driver, msg.Text, true);
                                 await client.SendTextMessageAsync(msg.Chat.Id, "Все послерейсовые осмотры созданы");
-                                await client.SendTextMessageAsync(msg.Chat.Id, "Ваш путевой лист:");
+                                await client.SendTextMessageAsync(msg.Chat.Id, "Ваш путевой лист:", replyMarkup: GetButtons(0));
 
 
                                 var pdf = await responser.SaveWaybillPDF(driver);
@@ -248,19 +252,16 @@ namespace OperatorBot
                             var lic = _db.Licenser.FirstOrDefault(a => a.ID == driver.licenser_id);
                             responser.msidn = lic.msidn.Replace("\r\n", "");
                             responser.password = lic.password.Replace("\r\n", "");
+                            responser.employer = lic.employerId;
                             var a = responser.GetWaybill(driver);
 
                             //По сути здесь начинается процесс получения путевого листа. Нужно выбрать ИД машины и запустить итерационный процесс
                             if (a.Result == "-1")
                             {
-                                if (driver.licenser_id != null)
-                                    driver.licenser = _db.Licenser.Where(x => x.ID == driver.licenser_id).FirstOrDefault();
                                 await client.SendTextMessageAsync(msg.Chat.Id, $"Здравствуйте, {driver.C_FIO}. Выберите вашу машину из списка ниже, введя число, которое стоит рядом с машиной");
-                                responser.msidn = driver.licenser.msidn.Replace("\r\n", "");
-
-                                responser.password = driver.licenser.password.Replace("\r\n", "");
 
                                 var Cars = responser.GetCarsAsync().Result;
+
                                 foreach (Cars car in Cars.OrderBy(x => x.ID))
                                 {
                                     await client.SendTextMessageAsync(msg.Chat.Id, $"[{car.ID}] -  {car.ShortName}");
@@ -281,17 +282,31 @@ namespace OperatorBot
 
                                 stream.Flush();
                                 stream.Close();
-
-                                await client.SendTextMessageAsync(msg.Chat.Id, "Создание послерейсового осмотра медиком...");
-
-                                var ans = MedicResponser.CreateMed(driver, true);
-
-                                await client.SendTextMessageAsync(msg.Chat.Id, ans.Result);
-                                await client.SendTextMessageAsync(msg.Chat.Id, "Введите свой пробег: ");
+                                await client.SendTextMessageAsync(msg.Chat.Id, $"Желаете закрыть его? ", replyMarkup: GetButtons(1));
 
                                 iterator.Remove(msg.Chat.Id);
-                                iterator.Add(msg.Chat.Id, "Ввод пробега(Пост)");
+                                iterator.Add(msg.Chat.Id, "Ответ на вопрос закрытия ПЛ");
                             }
+                        }
+                    }
+                    //Закрытие пл
+                    else if(Iteration.Value =="Ответ на вопрос закрытия ПЛ")
+                    {
+                        if (msg.Text == "Да")
+                        {
+                            await client.SendTextMessageAsync(msg.Chat.Id, "Создание послерейсового осмотра медиком...",replyMarkup:GetButtons(0));
+
+                            var ans = MedicResponser.CreateMed(driver, true);
+
+                            await client.SendTextMessageAsync(msg.Chat.Id, ans.Result);
+                            await client.SendTextMessageAsync(msg.Chat.Id, "Введите свой пробег: ");
+
+                            iterator.Remove(msg.Chat.Id);
+                            iterator.Add(msg.Chat.Id, "Ввод пробега(Пост)");
+                        }
+                        else
+                        {
+                            await client.SendTextMessageAsync(msg.Chat.Id, "Путевой лист закрываться не будет. Вы можете выбрать любое другое доступное действие", replyMarkup: GetButtons(0));
                         }
                     }
                     else if (msg.Text == "Выбрать или изменить перевозчика")
@@ -325,28 +340,35 @@ namespace OperatorBot
 
             }
         }
-        private static IReplyMarkup GetButtons()
+        private static IReplyMarkup GetButtons(int state) //1-Ответ на вопрос, 2-для незареганных
         {
+            if (state == 1)
+                return new ReplyKeyboardMarkup
+                {
+                    Keyboard = new List<List<KeyboardButton>>
+                    {
+                        new() {new KeyboardButton {Text = "Да"}},
+                        new() {new KeyboardButton {Text = "Нет"}}
+                    }
+                };
+            if (state == 2)
+                return new ReplyKeyboardMarkup
+                {
+                    Keyboard = new List<List<KeyboardButton>>
+                    {
+                        new() { new KeyboardButton { Text = "Получить/Закрыть путевой лист" } }
+                    }
+                };
             return new ReplyKeyboardMarkup
             {
                 Keyboard = new List<List<KeyboardButton>>
                 {
-                    new List<KeyboardButton> { new KeyboardButton { Text = "Получить/Закрыть путевой лист" } },
-                    new List<KeyboardButton> { new KeyboardButton { Text = "Выбрать или изменить перевозчика" } }
+                    new() {new KeyboardButton {Text = "Получить/Закрыть путевой лист"}},
+                    new() {new KeyboardButton {Text = "Выбрать или изменить перевозчика"}}
                 }
             };
         }
-        //Для незареганных
-        private static IReplyMarkup GetButtons1()
-        {
-            return new ReplyKeyboardMarkup
-            {
-                Keyboard = new List<List<KeyboardButton>>
-                {
-                    new List<KeyboardButton> { new KeyboardButton { Text = "Получить/Закрыть путевой лист" } }
-                }
-            };
-        }
+
         //Необходимо постоянно иметь какую то версию драйвера в базе данных. На каждое сообщение при регистрации создаётся модель в базе данных и удаляется старая. Для увеличения возможных итераций использую GUID
         private static void RemoveAndAdd(Driver driver)
         {

@@ -50,7 +50,7 @@ namespace OperatorBot
                 C_FIO = JObject.Parse(responseString).SelectToken("user").SelectToken("lastName").ToString() + " " + JObject.Parse(responseString).SelectToken("user").SelectToken("firstName").ToString() + " " + JObject.Parse(responseString).SelectToken("user").SelectToken("patronymic").ToString();
                 var a = response.StatusCode;
             }
-            catch 
+            catch
             {
                 C_FIO = "403. Ошибка. Вы не найдены в системе, или система не отвечает, или данный водитель не принадлежит выбранному перевозчику. Повторите попытку, введя корректные данные";
             }
@@ -81,7 +81,7 @@ namespace OperatorBot
             {
                 try
                 {
-                    var request1 = WebRequest.Create($"https://art.taxi.mos.ru/api/employees");
+                    var request1 = WebRequest.Create($"https://art.taxi.mos.ru/api/employees/" + employer);
                     request1.Method = "GET";
                     request1.Headers.Add("Authorization", $"{BToken}");
                     request1.PreAuthenticate = true;
@@ -103,7 +103,7 @@ namespace OperatorBot
                 if (!string.IsNullOrEmpty(employer))
                 {
                     BToken = JObject.Parse(responseString).SelectToken("token").ToString();
-                    Console.ForegroundColor = ConsoleColor.Green; 
+                    Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine($"{DateTime.Now} - Получен BToken");
                     Console.ForegroundColor = ConsoleColor.White;
                 }
