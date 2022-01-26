@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq; //Пакет JSON
 using OperatorBot;
+using OperatorBot.Controllers;
 using OperatorBot.Models;
 using Telegram.Bot;
 using Telegram.Bot.Args;
@@ -33,13 +34,15 @@ namespace OperatorBot
         static void Main(string[] args)
         {
 
-            MedicResponser = new Responser("9519997810", "31spFKX5", null);
+            MedicResponser = new Responser("9519997810", "FZ8oAo73", null);
             MedicResponser.Authenticate();
             MechanicResponser = new Responser("9663648005", "Ua44NkV0", null);
             MechanicResponser.Authenticate();
             iterator = new Dictionary<long, string>();
             client = new TelegramBotClient(token);
             responser = new Responser();
+
+            
             client.StartReceiving();
             client.OnMessage += OnMessageHandler;
             Console.ReadLine();
@@ -178,49 +181,53 @@ namespace OperatorBot
                             }
                             if (Iteration.Value == "Ввод пробега")
                             {
-                                await client.SendTextMessageAsync(msg.Chat.Id, "Создание предрейсового осмотра механиком...");
-                                iterator.Remove(msg.Chat.Id);
-                                iterator.Add(msg.Chat.Id, "МеханикПре");
-                                var ans = MechanicResponser.CreateTech(driver, msg.Text, false);
-                                await client.SendTextMessageAsync(msg.Chat.Id, "Все осмотры созданы");
-                                await client.SendTextMessageAsync(msg.Chat.Id, "Ваш путевой лист:");
+                                await client.SendTextMessageAsync(msg.Chat.Id, "Создание предрейсового осмотра механиком. Процесс займёт до 10 минут...");
+                                //iterator.Remove(msg.Chat.Id);
+                                //iterator.Add(msg.Chat.Id, "МеханикПре");
+                                //var ans = MechanicResponser.CreateTech(driver, msg.Text, false);
+                                //await client.SendTextMessageAsync(msg.Chat.Id, "Все осмотры созданы");
+                                //await client.SendTextMessageAsync(msg.Chat.Id, "Ваш путевой лист:");
 
-                                var pdf = await responser.SaveWaybillPDF(driver);
-                                var stream = File.OpenRead(pdf);
-                                var output = new Telegram.Bot.Types.InputFiles.InputOnlineFile(stream, pdf);
+                                //var pdf = await responser.SaveWaybillPDF(driver);
+                                //var stream = File.OpenRead(pdf);
+                                //var output = new Telegram.Bot.Types.InputFiles.InputOnlineFile(stream, pdf);
 
-                                await client.SendDocumentAsync(msg.Chat.Id, output);
+                                //await client.SendDocumentAsync(msg.Chat.Id, output);
 
-                                stream.Flush();
-                                stream.Close();
+                                //stream.Flush();
+                                //stream.Close();
 
-                                await client.SendTextMessageAsync(msg.Chat.Id, "Все данные успешно сохранены. Спасибо!");
+                                //await client.SendTextMessageAsync(msg.Chat.Id, "Все данные успешно сохранены. Спасибо!");
+                                AsyncResponser asyncResponser = new AsyncResponser();
+                                asyncResponser.Tech(driver, msg.Text, false, msg.Chat.Id,client, MechanicResponser);
 
                             }
                             //Пост теч
                             else if (Iteration.Value == "Ввод пробега(Пост)")
                             {
-                                await client.SendTextMessageAsync(msg.Chat.Id, "Создание послерейсового осмотра механиком...");
-                                iterator.Remove(msg.Chat.Id);
-                                iterator.Add(msg.Chat.Id, "МеханикПост");
-                                var ans = MechanicResponser.CreateTech(driver, msg.Text, true);
-                                await client.SendTextMessageAsync(msg.Chat.Id, "Все послерейсовые осмотры созданы");
-                                await client.SendTextMessageAsync(msg.Chat.Id, "Ваш путевой лист:", replyMarkup: GetButtons(0));
+                                await client.SendTextMessageAsync(msg.Chat.Id, "Создание послерейсового осмотра механиком. Процесс займёт до 10 минут...");
+                                AsyncResponser asyncResponser = new AsyncResponser();
+                                asyncResponser.Tech(driver, msg.Text, true, msg.Chat.Id, client,MechanicResponser);
+                                //iterator.Remove(msg.Chat.Id);
+                                //iterator.Add(msg.Chat.Id, "МеханикПост");
+                                //var ans = MechanicResponser.CreateTech(driver, msg.Text, true);
+                                //await client.SendTextMessageAsync(msg.Chat.Id, "Все послерейсовые осмотры созданы");
+                                //await client.SendTextMessageAsync(msg.Chat.Id, "Ваш путевой лист:", replyMarkup: GetButtons(0));
 
 
-                                var pdf = await responser.SaveWaybillPDF(driver);
-                                //Путевой лист сразу же удаляем из базы КИС АРТ - он больше нам не нужен
-                                await responser.DeleteWaybill(driver);
+                                //var pdf = await responser.SaveWaybillPDF(driver);
+                                ////Путевой лист сразу же удаляем из базы КИС АРТ - он больше нам не нужен
+                                //await responser.DeleteWaybill(driver);
 
-                                var stream = File.OpenRead(pdf);
-                                var output = new Telegram.Bot.Types.InputFiles.InputOnlineFile(stream, pdf);
+                                //var stream = File.OpenRead(pdf);
+                                //var output = new Telegram.Bot.Types.InputFiles.InputOnlineFile(stream, pdf);
 
-                                await client.SendDocumentAsync(msg.Chat.Id, output);
+                                //await client.SendDocumentAsync(msg.Chat.Id, output);
 
-                                stream.Flush();
-                                stream.Close();
+                                //stream.Flush();
+                                //stream.Close();
 
-                                await client.SendTextMessageAsync(msg.Chat.Id, "Все данные успешно сохранены. Спасибо!");
+                                //await client.SendTextMessageAsync(msg.Chat.Id, "Все данные успешно сохранены. Спасибо!");
                             }
                         }
                     }
@@ -304,8 +311,9 @@ namespace OperatorBot
                             iterator.Remove(msg.Chat.Id);
                             iterator.Add(msg.Chat.Id, "Ввод пробега(Пост)");
                         }
-                        else
+                        else if(msg.Text == "Нет")
                         {
+                            iterator.Remove(msg.Chat.Id);
                             await client.SendTextMessageAsync(msg.Chat.Id, "Путевой лист закрываться не будет. Вы можете выбрать любое другое доступное действие", replyMarkup: GetButtons(0));
                         }
                     }
@@ -377,6 +385,13 @@ namespace OperatorBot
             _db.SaveChanges();
             _db.Driver.Add(driver);
             _db.SaveChanges();
+
+        }
+        static async Task erast()
+        {
+            Task.Delay(10000).Wait();
+            Console.WriteLine("Тест сработал");
+
 
         }
     }
