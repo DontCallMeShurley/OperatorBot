@@ -14,7 +14,7 @@ namespace OperatorBot.Controllers
     public class AsyncResponser
     {
 
-
+        //TODO: сам класс изжил себя. Необходимо убрать его и перейти на обычный Responser
         public async Task Tech(Driver driver, string probeg, bool B_Post, long chatId, TelegramBotClient client, Responser mechanicResponser)
         {
 
