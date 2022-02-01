@@ -174,7 +174,9 @@ namespace OperatorBot
                 request.Headers.Add("Authorization", $"{BToken}");
                 request.PreAuthenticate = true;
                 request.ContentType = "application/json";
-                var postData = "{\"status\":\"ISSUED\",\"vehicle\":{\"id\":" + cars + "},\"driver\":{\"id\":" + driver.Code + "}}";
+                string postData = "";
+                if (driver != null)
+                     postData = "{\"status\":\"ISSUED\",\"vehicle\":{\"id\":" + cars + "},\"driver\":{\"id\":" + driver.Code + "}}";
                 var data = Encoding.ASCII.GetBytes(postData);
                 request.ContentLength = data.Length;
 
