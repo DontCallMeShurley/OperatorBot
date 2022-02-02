@@ -10,8 +10,8 @@ using OperatorBot.Models;
 namespace OperatorBot.Migrations
 {
     [DbContext(typeof(Context))]
-    [Migration("20211218224934_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20220202072438_set")]
+    partial class set
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -39,6 +39,9 @@ namespace OperatorBot.Migrations
                     b.Property<string>("UserName")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Waybill")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("licenser_id")
                         .HasColumnType("nvarchar(450)");
 
@@ -58,6 +61,9 @@ namespace OperatorBot.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("employerId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("msidn")
                         .HasColumnType("nvarchar(max)");
 
@@ -67,6 +73,31 @@ namespace OperatorBot.Migrations
                     b.HasKey("ID");
 
                     b.ToTable("Licenser");
+                });
+
+            modelBuilder.Entity("OperatorBot.Models.Settings", b =>
+                {
+                    b.Property<string>("ID")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("botToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("mechMsdisn")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("mechPass")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("medMsdisn")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("medPass")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("ID");
+
+                    b.ToTable("Settings");
                 });
 
             modelBuilder.Entity("OperatorBot.Models.Driver", b =>
