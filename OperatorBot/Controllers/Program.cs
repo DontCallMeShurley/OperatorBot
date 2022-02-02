@@ -23,7 +23,6 @@ namespace OperatorBot
 
     class Program
     {
-        private static string token { get; set; } = "5098666633:AAFOUwwYkIUaCl-Bzyr495IXiKtq0BiE07E";
         private static TelegramBotClient client;
         private static int Iteration = 0;
         private static Context _db = new Context();
@@ -33,13 +32,13 @@ namespace OperatorBot
         public static Responser MechanicResponser;
         static void Main(string[] args)
         {
-
-            MedicResponser = new Responser("9519997810", "FZ8oAo73", null);
+            var settings = _db.Settings.FirstOrDefault();
+            MedicResponser = new Responser(settings.medMsdisn, settings.medPass, null);
             MedicResponser.Authenticate();
-            MechanicResponser = new Responser("9663648005", "Ua44NkV0", null);
+            MechanicResponser = new Responser(settings.mechMsdisn, settings.mechPass, null);
             MechanicResponser.Authenticate();
             iterator = new Dictionary<long, string>();
-            client = new TelegramBotClient(token);
+            client = new TelegramBotClient(settings.botToken);
             responser = new Responser();
 
 

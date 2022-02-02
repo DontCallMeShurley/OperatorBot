@@ -10,6 +10,7 @@ namespace OperatorBot.Models
         }
         public DbSet<Driver> Driver { get; set; }
         public DbSet<Licenser> Licenser { get; set; }
+        public DbSet<Settings> Settings { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Driver>()

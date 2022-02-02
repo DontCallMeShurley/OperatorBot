@@ -346,6 +346,7 @@ namespace OperatorBot
             }
             return outputData;
         }
+        //Класс не нужен уже по идее, если реализовывать через асихронность
         public async Task<string> CreateTech(Driver driver, string probeg, bool B_Post)
         {
             var outputData = "";
