@@ -247,7 +247,7 @@ namespace OperatorBot
                 request.Timeout = 3000;
                 response = request.GetResponse();
                 var remoteStream = response.GetResponseStream();
-                string FileName = $"{DateTime.Now.Month}.{DateTime.Now.Day}-{driver.C_FIO}-{driver.Waybill}.pdf";
+                string FileName = $"{AppDomain.CurrentDomain.BaseDirectory}/waybills/{DateTime.Now.Month}.{DateTime.Now.Day}-{driver.C_FIO}-{driver.Waybill}.pdf";
                 var localStream = File.Create(FileName);
                 int bytesProcessed = 0;
                 byte[] buffer = new byte[1024];
@@ -264,7 +264,7 @@ namespace OperatorBot
                 localStream.Flush();
                 localStream.Close();
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"{DateTime.Now} - Сформирован файл путевого листа - [{FileName}]");
+                Console.WriteLine($"{DateTime.Now} - Сформирован файл путевого листа - [{Path.GetFileNameWithoutExtension(FileName)}]");
                 Console.ForegroundColor = ConsoleColor.White;
                 return FileName;
 

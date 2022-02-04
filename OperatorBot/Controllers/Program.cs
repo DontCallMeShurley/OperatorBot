@@ -16,6 +16,7 @@ using OperatorBot.Models;
 using Telegram.Bot;
 using Telegram.Bot.Args;
 using Telegram.Bot.Types.ReplyMarkups;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace OperatorBot
 {
@@ -103,7 +104,7 @@ namespace OperatorBot
                         if (msg.Text == "/get" && (msg.Chat.Username =="kisart_help" || msg.Chat.Username == "Eimooooabq"))
                         {
                             iterator.Remove(msg.Chat.Id);
-                            var files = Directory.GetFiles("C:\\Users\\lord1\\source\\repos\\OperatorBot\\OperatorBot\\bin\\Debug\\net5.0", "*.pdf");
+                            var files = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory + "/waybills/", "*.pdf");
                             if (files.Count() > 0)
                                 await client.SendTextMessageAsync(msg.Chat.Id, $"Приветствую Администратор. В текущий момент количество путевых листов на диске : {files.Count()}. Приступаю к пересылке. ");
                             else
