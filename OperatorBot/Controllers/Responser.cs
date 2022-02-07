@@ -234,7 +234,7 @@ namespace OperatorBot
             return outputData;
         }
         //Получение путевого листа в файл
-        public async Task<string> SaveWaybillPDF(Driver driver)
+        public async Task<string> SaveWaybillPDF(Driver driver, bool B_Open)
         {
             Authenticate().Wait();
             WebResponse response;
@@ -247,7 +247,11 @@ namespace OperatorBot
                 request.Timeout = 3000;
                 response = request.GetResponse();
                 var remoteStream = response.GetResponseStream();
-                string FileName = $"{AppDomain.CurrentDomain.BaseDirectory}/waybills/{DateTime.Now.Month}.{DateTime.Now.Day}-{driver.C_FIO}-{driver.Waybill}.pdf";
+                string FileName = "";
+                if (B_Open)
+                     FileName = $"{AppDomain.CurrentDomain.BaseDirectory}/waybills/открытые/{DateTime.Now.Month}.{DateTime.Now.Day}-{driver.C_FIO}-{driver.Waybill}.pdf";
+                else
+                    FileName = $"{AppDomain.CurrentDomain.BaseDirectory}/waybills/закрытые/{DateTime.Now.Month}.{DateTime.Now.Day}-{driver.C_FIO}-{driver.Waybill}.pdf";
                 var localStream = File.Create(FileName);
                 int bytesProcessed = 0;
                 byte[] buffer = new byte[1024];
@@ -260,6 +264,11 @@ namespace OperatorBot
                     localStream.Write(buffer, 0, bytesRead);
                     bytesProcessed += bytesRead;
                 } while (bytesRead > 0);
+                //добавляю костыль на удаление открытых путевых
+                if (!B_Open && File.Exists($"{AppDomain.CurrentDomain.BaseDirectory}/waybills/открытые/{DateTime.Now.Month}.{DateTime.Now.Day}-{driver.C_FIO}-{driver.Waybill}.pdf"))
+                    File.Delete($"{AppDomain.CurrentDomain.BaseDirectory}/waybills/открытые/{DateTime.Now.Month}.{DateTime.Now.Day}-{driver.C_FIO}-{driver.Waybill}.pdf");
+
+
 
                 localStream.Flush();
                 localStream.Close();
