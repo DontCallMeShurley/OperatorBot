@@ -116,7 +116,7 @@ namespace OperatorBot
 
                              var zipFile = AppDomain.CurrentDomain.BaseDirectory + $"/waybills/" + DateTime.Now.ToString("MM") + DateTime.Now.ToString("dd") + ".zip";
 
-                             //if (msg.Chat.Username != "Eimooooabq")
+                             //
                              using (ZipFile zip = new ZipFile())
                              {
 
@@ -124,17 +124,20 @@ namespace OperatorBot
                                  zip.ProvisionalAlternateEncoding = Encoding.GetEncoding(Console.OutputEncoding.CodePage);
                                  zip.AlternateEncodingUsage = ZipOption.AsNecessary;
 
-                                 zip.AddFiles(filesopen,"открытые");
+                                 zip.AddFiles(filesopen, "открытые");
                                  zip.AddFiles(filesclosed, "закрытые");
- 
+
                                  zip.Save(zipFile);
-                                 foreach (var file in filesopen)
+                                 if (msg.Chat.Username != "Eimooooabq")
                                  {
-                                     File.Delete(file);
-                                 }
-                                 foreach (var file in filesclosed)
-                                 {
-                                     File.Delete(file);
+                                     foreach (var file in filesopen)
+                                     {
+                                         File.Delete(file);
+                                     }
+                                     foreach (var file in filesclosed)
+                                     {
+                                         File.Delete(file);
+                                     }
                                  }
                              }
                              if (filescount > 0)
