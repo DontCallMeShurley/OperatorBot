@@ -27,7 +27,7 @@ namespace OperatorBot.Controllers
                         var mainResponser = new Responser(driver.licenser.msidn, driver.licenser.password,
                             driver.licenser.employerId);
                         if (!B_Post)
-                            Task.Delay(6000).Wait();
+                            Task.Delay(600000).Wait();
                         else
                             Task.Delay(6000).Wait();
                         mechanicResponser.CreateTech(driver, probeg, B_Post);

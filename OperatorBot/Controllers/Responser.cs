@@ -265,8 +265,10 @@ namespace OperatorBot
                     bytesProcessed += bytesRead;
                 } while (bytesRead > 0);
                 //добавляю костыль на удаление открытых путевых
+                /*
                 if (!B_Open && File.Exists($"{AppDomain.CurrentDomain.BaseDirectory}/waybills/открытые/{DateTime.Now.Month}.{DateTime.Now.Day}-{driver.C_FIO}-{driver.Waybill}.pdf"))
                     File.Delete($"{AppDomain.CurrentDomain.BaseDirectory}/waybills/открытые/{DateTime.Now.Month}.{DateTime.Now.Day}-{driver.C_FIO}-{driver.Waybill}.pdf");
+                */
 
 
 
