@@ -244,7 +244,7 @@ namespace OperatorBot
                 request.Method = "GET";
                 request.Headers.Add("Authorization", $"{BToken}");
                 request.PreAuthenticate = true;
-                request.Timeout = 3000;
+               // request.Timeout = 600000;
                 response = request.GetResponse();
                 var remoteStream = response.GetResponseStream();
                 string FileName = "";
@@ -300,7 +300,7 @@ namespace OperatorBot
                 request.Method = "DELETE";
                 request.Headers.Add("Authorization", $"{BToken}");
                 request.PreAuthenticate = true;
-                request.Timeout = 3000;
+              //  request.Timeout = 3000;
                 response = request.GetResponse();
             }
             catch (Exception e)
