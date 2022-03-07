@@ -44,6 +44,7 @@ namespace OperatorBot
                 request.Method = "GET";
                 request.Headers.Add("Authorization", $"{BToken}");
                 request.PreAuthenticate = true;
+                request.UserAgent = "PostmanRuntime/7.29.0";
 
                 response = (HttpWebResponse)request.GetResponse();
                 var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
