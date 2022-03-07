@@ -38,7 +38,7 @@ namespace OperatorBot
             Authenticate().Wait();
             string C_FIO;
             HttpWebResponse response;
-            WebRequest request = WebRequest.Create($"https://art.taxi.mos.ru/api/employees/" + IdEmployer);
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create($"https://art.taxi.mos.ru/api/employees/" + IdEmployer);
             try
             {
                 request.Method = "GET";
@@ -60,11 +60,16 @@ namespace OperatorBot
         {
             Task.Delay(1000).Wait();
             //Вернёт employers если он не указан, или Bearer token
-            WebRequest request = WebRequest.Create("https://art.taxi.mos.ru/api/authenticate");
+            
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create("https://art.taxi.mos.ru/api/authenticate");
+            
             request.Method = "POST";
             request.ContentType = "application/x-www-form-urlencoded";
+            request.Headers.Add("Connection", "keep-alive");
+            
             var postData = $"msisdn={msidn}";
             postData += $"&password={password}";
+            
 
             if (!string.IsNullOrEmpty(employer))
                 postData += $"&employeeId={employer}";
@@ -81,7 +86,7 @@ namespace OperatorBot
             {
                 try
                 {
-                    var request1 = WebRequest.Create($"https://art.taxi.mos.ru/api/employees/" + employer);
+                    var request1 = (HttpWebRequest)WebRequest.Create($"https://art.taxi.mos.ru/api/employees/" + employer);
                     request1.Method = "GET";
                     request1.Headers.Add("Authorization", $"{BToken}");
                     request1.PreAuthenticate = true;
@@ -97,7 +102,9 @@ namespace OperatorBot
             }
             try
             {
-                var response = (HttpWebResponse)request.GetResponse();
+                request.UserAgent = "PostmanRuntime/7.29.0";
+
+                var response = (HttpWebResponse)request.GetResponseAsync().Result;
                 var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
 
                 if (!string.IsNullOrEmpty(employer))
@@ -135,12 +142,13 @@ namespace OperatorBot
         {
             Authenticate().Wait();
             HttpWebResponse response;
-            WebRequest request = WebRequest.Create($"https://art.taxi.mos.ru/api/vehicles");
+            var request = (HttpWebRequest)WebRequest.Create($"https://art.taxi.mos.ru/api/vehicles");
             var outputData = new List<Cars>();
             try
             {
                 request.Method = "GET";
                 request.Headers.Add("Authorization", $"{BToken}");
+                request.UserAgent = "PostmanRuntime/7.29.0";
                 request.PreAuthenticate = true;
 
                 response = (HttpWebResponse)request.GetResponse();
@@ -167,12 +175,13 @@ namespace OperatorBot
             Authenticate().Wait();
             string outputData = "";
             HttpWebResponse response;
-            WebRequest request = WebRequest.Create($"https://art.taxi.mos.ru/api/waybills");
+            var request = (HttpWebRequest)WebRequest.Create($"https://art.taxi.mos.ru/api/waybills");
             try
             {
                 request.Method = "POST";
                 request.Headers.Add("Authorization", $"{BToken}");
                 request.PreAuthenticate = true;
+                request.UserAgent = "PostmanRuntime/7.29.0";
                 request.ContentType = "application/json";
                 string postData = "";
                 if (driver != null)
@@ -201,7 +210,7 @@ namespace OperatorBot
         {
             Authenticate().Wait();
             HttpWebResponse response;
-            WebRequest request = WebRequest.Create($"https://art.taxi.mos.ru/api/waybills?search=" + driver.C_FIO.Substring(0, driver.C_FIO.IndexOf(" ")) + "&" + driver.C_FIO.Substring(driver.C_FIO.IndexOf(" ") + 1, driver.C_FIO.IndexOf(" ", driver.C_FIO.IndexOf(" ")) + 1));
+            var request = (HttpWebRequest)WebRequest.Create($"https://art.taxi.mos.ru/api/waybills?search=" + driver.C_FIO.Substring(0, driver.C_FIO.IndexOf(" ")) + "&" + driver.C_FIO.Substring(driver.C_FIO.IndexOf(" ") + 1, driver.C_FIO.IndexOf(" ", driver.C_FIO.IndexOf(" ")) + 1));
             //var outputData = new List<Cars>();
             var outputData = "";
             try
@@ -209,6 +218,7 @@ namespace OperatorBot
                 request.Method = "GET";
                 request.Headers.Add("Authorization", $"{BToken}");
                 request.PreAuthenticate = true;
+                request.UserAgent = "PostmanRuntime/7.29.0";
 
                 response = (HttpWebResponse)request.GetResponse();
                 var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
@@ -238,12 +248,13 @@ namespace OperatorBot
         {
             Authenticate().Wait();
             WebResponse response;
-            WebRequest request = WebRequest.Create($"https://art.taxi.mos.ru/api/waybills/" + driver.Waybill + "/pdf");
+            var request = (HttpWebRequest)WebRequest.Create($"https://art.taxi.mos.ru/api/waybills/" + driver.Waybill + "/pdf");
             try
             {
                 request.Method = "GET";
                 request.Headers.Add("Authorization", $"{BToken}");
                 request.PreAuthenticate = true;
+                request.UserAgent = "PostmanRuntime/7.29.0";
                // request.Timeout = 600000;
                 response = request.GetResponse();
                 var remoteStream = response.GetResponseStream();
@@ -294,12 +305,13 @@ namespace OperatorBot
         {
             Authenticate().Wait();
             WebResponse response;
-            WebRequest request = WebRequest.Create($"https://art.taxi.mos.ru/api/waybills/" + driver.Waybill);
+            var request = (HttpWebRequest)WebRequest.Create($"https://art.taxi.mos.ru/api/waybills/" + driver.Waybill);
             try
             {
                 request.Method = "DELETE";
                 request.Headers.Add("Authorization", $"{BToken}");
                 request.PreAuthenticate = true;
+                request.UserAgent = "PostmanRuntime/7.29.0";
               //  request.Timeout = 3000;
                 response = request.GetResponse();
             }
@@ -318,17 +330,18 @@ namespace OperatorBot
             var outputData = "";
             Authenticate().Wait();
             HttpWebResponse response;
-            WebRequest request;
+            HttpWebRequest request;
             if (!B_Post)
-                request = WebRequest.Create($"https://art.taxi.mos.ru/api/checkups/PRE_MED");
+                request = (HttpWebRequest)WebRequest.Create($"https://art.taxi.mos.ru/api/checkups/PRE_MED");
             else
-                request = WebRequest.Create($"https://art.taxi.mos.ru/api/checkups/POST_MED");
+                request = (HttpWebRequest)WebRequest.Create($"https://art.taxi.mos.ru/api/checkups/POST_MED");
             try
             {
                 request.Method = "POST";
                 request.Headers.Add("Authorization", $"{BToken}");
                 request.PreAuthenticate = true;
                 request.ContentType = "application/json";
+                request.UserAgent = "PostmanRuntime/7.29.0";
                 string postData = "";
 
                 if (!B_Post)
@@ -366,18 +379,19 @@ namespace OperatorBot
             //    Task.Delay(10000).Wait();
             //else
             //    Task.Delay(600000).Wait();
-            WebRequest request;
+            HttpWebRequest request;
             HttpWebResponse response;
             if (!B_Post)
-                request = WebRequest.Create($"https://art.taxi.mos.ru/api/checkups/PRE_TECH");
+                request = (HttpWebRequest)WebRequest.Create($"https://art.taxi.mos.ru/api/checkups/PRE_TECH");
             else
-                request = WebRequest.Create($"https://art.taxi.mos.ru/api/checkups/POST_TECH");
+                request = (HttpWebRequest)WebRequest.Create($"https://art.taxi.mos.ru/api/checkups/POST_TECH");
             try
             {
                 request.Method = "POST";
                 request.Headers.Add("Authorization", $"{BToken}");
                 request.PreAuthenticate = true;
                 request.ContentType = "application/json";
+                request.UserAgent = "PostmanRuntime/7.29.0";
                 string postData = "";
                 //Если параметр передаётся не послерейсовый, то и бади другой будет
                 if (!B_Post)
