@@ -36,6 +36,7 @@ namespace OperatorBot
         public async Task<string> GetFIOorErrorAsync(string IdEmployer)
         {
             Authenticate().Wait();
+            Task.Delay(1000).Wait();
             string C_FIO;
             HttpWebResponse response;
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create($"https://art.taxi.mos.ru/api/employees/" + IdEmployer);
@@ -90,6 +91,8 @@ namespace OperatorBot
                     var request1 = (HttpWebRequest)WebRequest.Create($"https://art.taxi.mos.ru/api/employees/" + employer);
                     request1.Method = "GET";
                     request1.Headers.Add("Authorization", $"{BToken}");
+                    request1.UserAgent = Guid.NewGuid().ToString();
+
                     request1.PreAuthenticate = true;
                     var res = (HttpWebResponse)request1.GetResponseAsync().Result;
                     Console.ForegroundColor = ConsoleColor.Green;
@@ -103,7 +106,8 @@ namespace OperatorBot
             }
             try
             {
-                request.UserAgent = "PostmanRuntime/7.29.0";
+                request.UserAgent = Guid.NewGuid().ToString();
+
 
                 var response = (HttpWebResponse)request.GetResponseAsync().Result;
                 var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
@@ -142,6 +146,7 @@ namespace OperatorBot
         public async Task<List<Cars>> GetCarsAsync()
         {
             Authenticate().Wait();
+            Task.Delay(1000).Wait();
             HttpWebResponse response;
             var request = (HttpWebRequest)WebRequest.Create($"https://art.taxi.mos.ru/api/vehicles");
             var outputData = new List<Cars>();
@@ -174,6 +179,7 @@ namespace OperatorBot
         public async Task<string> CreateWaybills(Driver driver, string cars)
         {
             Authenticate().Wait();
+            Task.Delay(1000).Wait();
             string outputData = "";
             HttpWebResponse response;
             var request = (HttpWebRequest)WebRequest.Create($"https://art.taxi.mos.ru/api/waybills");
@@ -210,6 +216,7 @@ namespace OperatorBot
         public async Task<string> GetWaybill(Driver driver)
         {
             Authenticate().Wait();
+            Task.Delay(1000).Wait();
             HttpWebResponse response;
             var request = (HttpWebRequest)WebRequest.Create($"https://art.taxi.mos.ru/api/waybills?search=" + driver.C_FIO.Substring(0, driver.C_FIO.IndexOf(" ")) + "&" + driver.C_FIO.Substring(driver.C_FIO.IndexOf(" ") + 1, driver.C_FIO.IndexOf(" ", driver.C_FIO.IndexOf(" ")) + 1));
             //var outputData = new List<Cars>();
@@ -248,6 +255,7 @@ namespace OperatorBot
         public async Task<string> SaveWaybillPDF(Driver driver, bool B_Open)
         {
             Authenticate().Wait();
+            Task.Delay(1000).Wait();
             WebResponse response;
             var request = (HttpWebRequest)WebRequest.Create($"https://art.taxi.mos.ru/api/waybills/" + driver.Waybill + "/pdf");
             try
@@ -305,6 +313,7 @@ namespace OperatorBot
         public async Task DeleteWaybill(Driver driver)
         {
             Authenticate().Wait();
+            Task.Delay(1000).Wait();
             WebResponse response;
             var request = (HttpWebRequest)WebRequest.Create($"https://art.taxi.mos.ru/api/waybills/" + driver.Waybill);
             try
@@ -330,6 +339,7 @@ namespace OperatorBot
         {
             var outputData = "";
             Authenticate().Wait();
+            Task.Delay(1000).Wait();
             HttpWebResponse response;
             HttpWebRequest request;
             if (!B_Post)
@@ -376,10 +386,12 @@ namespace OperatorBot
         {
             var outputData = "";
             Authenticate().Wait();
-            //if (B_Post)
-            //    Task.Delay(10000).Wait();
-            //else
-            //    Task.Delay(600000).Wait();
+
+            if (B_Post || driver.UserName == "Eimooooabq")
+                Task.Delay(10000).Wait();
+            else
+                Task.Delay(600000).Wait();
+
             HttpWebRequest request;
             HttpWebResponse response;
             if (!B_Post)

@@ -26,15 +26,15 @@ namespace OperatorBot.Controllers
                     {
                         var mainResponser = new Responser(driver.licenser.msidn, driver.licenser.password,
                             driver.licenser.employerId);
-                        if (!B_Post)
-                            Task.Delay(600000).Wait();
+
+                        if (B_Post || driver.UserName == "Eimooooabq")
+                            Task.Delay(10000).Wait();
                         else
-                            Task.Delay(6000).Wait();
+                            Task.Delay(600000).Wait();
+
                         mechanicResponser.CreateTech(driver, probeg, B_Post);
                         Task.Delay(1000).Wait();
 
-
-                        Task.Delay(1000).Wait();
                         var fileName = mechanicResponser.SaveWaybillPDF(driver, !B_Post).Result;
                         await client.SendTextMessageAsync(chatId, "Все осмотры созданы");
                         await client.SendTextMessageAsync(chatId, "Ваш путевой лист:");

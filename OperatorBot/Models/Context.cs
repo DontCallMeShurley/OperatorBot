@@ -21,7 +21,7 @@ namespace OperatorBot.Models
         }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer(@"Server=(localdb)\mssqllocaldb;Database=OperatorBot;Trusted_Connection=True;");
+            optionsBuilder.UseSqlServer(@"Server=(LocalDB)\MSSQLLocalDB;Database=OperatorBot;Trusted_Connection=True;");
         }
 
     }
