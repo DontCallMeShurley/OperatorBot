@@ -15,7 +15,7 @@ namespace OperatorBot.Controllers
     {
 
         //TODO: сам класс изжил себя. Необходимо убрать его и перейти на обычный Responser
-        public async Task Tech(Driver driver, string probeg, bool B_Post, long chatId, TelegramBotClient client, Responser mechanicResponser)
+        public async Task Med(Driver driver,bool B_Post, long chatId, TelegramBotClient client, Responser medicResponser)
         {
 
             try
@@ -32,10 +32,10 @@ namespace OperatorBot.Controllers
                         else
                             Task.Delay(600000).Wait();
 
-                        mechanicResponser.CreateTech(driver, probeg, B_Post);
+                        medicResponser.CreateMed(driver, B_Post);
                         Task.Delay(1000).Wait();
 
-                        var fileName = mechanicResponser.SaveWaybillPDF(driver, !B_Post).Result;
+                        var fileName = medicResponser.SaveWaybillPDF(driver, !B_Post).Result;
                         await client.SendTextMessageAsync(chatId, "Все осмотры созданы");
                         await client.SendTextMessageAsync(chatId, "Ваш путевой лист:");
 

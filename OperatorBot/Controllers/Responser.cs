@@ -11,6 +11,7 @@ using Newtonsoft.Json;//Пакет JSON
 using Newtonsoft.Json.Linq;
 using OperatorBot.Models;
 using Unity;
+using System.Linq;
 using Timer = System.Threading.Timer;
 
 namespace OperatorBot
@@ -218,7 +219,7 @@ namespace OperatorBot
             Authenticate().Wait();
             Task.Delay(1000).Wait();
             HttpWebResponse response;
-            var request = (HttpWebRequest)WebRequest.Create($"https://art.taxi.mos.ru/api/waybills?search=" + driver.C_FIO.Substring(0, driver.C_FIO.IndexOf(" ")) + "&" + driver.C_FIO.Substring(driver.C_FIO.IndexOf(" ") + 1, driver.C_FIO.IndexOf(" ", driver.C_FIO.IndexOf(" ")) + 1));
+            var request = (HttpWebRequest)WebRequest.Create($"https://art.taxi.mos.ru/api/waybills");
             //var outputData = new List<Cars>();
             var outputData = "";
             try
@@ -236,10 +237,11 @@ namespace OperatorBot
                 {
                     return "-1";
                 }
-                var a = JArray.Parse(JObject.Parse(responseString).SelectToken("entries").ToString());
-                foreach (var b in a)
+                var drName = driver.C_FIO.Substring(0, driver.C_FIO.IndexOf(" ")) + "&" + driver.C_FIO.Substring(driver.C_FIO.IndexOf(" ") + 1, driver.C_FIO.IndexOf(" ", driver.C_FIO.IndexOf(" ")) + 1);
+                var waybillsArray = JArray.Parse(JObject.Parse(responseString).SelectToken("entries").ToString()).Where(x => x["driverName"].ToString() ==  drName);
+                foreach (var waybills in waybillsArray)
                 {
-                    outputData = b.SelectToken("id").ToString();
+                    outputData = waybills.SelectToken("id").ToString();
                 }
 
             }
@@ -340,6 +342,7 @@ namespace OperatorBot
             var outputData = "";
             Authenticate().Wait();
             Task.Delay(1000).Wait();
+
             HttpWebResponse response;
             HttpWebRequest request;
             if (!B_Post)
@@ -386,11 +389,7 @@ namespace OperatorBot
         {
             var outputData = "";
             Authenticate().Wait();
-
-            if (B_Post || driver.UserName == "Eimooooabq")
-                Task.Delay(10000).Wait();
-            else
-                Task.Delay(600000).Wait();
+            Task.Delay(1000).Wait();
 
             HttpWebRequest request;
             HttpWebResponse response;
