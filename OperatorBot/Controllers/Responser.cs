@@ -239,6 +239,10 @@ namespace OperatorBot
                 }
                
                 var waybillsArray = JArray.Parse(JObject.Parse(responseString).SelectToken("entries").ToString()).Where(x => x["driverName"].ToString() ==  driver.C_FIO);
+                if (waybillsArray.Count() == 0)
+                {
+                    return "-1";
+                }
                 foreach (var waybills in waybillsArray)
                 {
                     outputData = waybills.SelectToken("id").ToString();
