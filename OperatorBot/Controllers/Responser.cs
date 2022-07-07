@@ -237,8 +237,8 @@ namespace OperatorBot
                 {
                     return "-1";
                 }
-                var drName = driver.C_FIO.Substring(0, driver.C_FIO.IndexOf(" ")) + "&" + driver.C_FIO.Substring(driver.C_FIO.IndexOf(" ") + 1, driver.C_FIO.IndexOf(" ", driver.C_FIO.IndexOf(" ")) + 1);
-                var waybillsArray = JArray.Parse(JObject.Parse(responseString).SelectToken("entries").ToString()).Where(x => x["driverName"].ToString() ==  drName);
+               
+                var waybillsArray = JArray.Parse(JObject.Parse(responseString).SelectToken("entries").ToString()).Where(x => x["driverName"].ToString() ==  driver.C_FIO);
                 foreach (var waybills in waybillsArray)
                 {
                     outputData = waybills.SelectToken("id").ToString();
